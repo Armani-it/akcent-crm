@@ -1,19 +1,13 @@
-// Подключаем установленные пакеты
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
 
-// Создаем приложение Express
 const app = express();
 const port = process.env.PORT || 3001;
 
-// Эти строки нужны, чтобы сервер мог принимать данные в формате JSON
 app.use(cors());
 app.use(express.json());
 
-// --- ПОДКЛЮЧЕНИЕ К БАЗЕ ДАННЫХ ---
-// Express будет автоматически использовать переменную окружения DATABASE_URL,
-// которую мы добавим на Render.
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: {
@@ -21,20 +15,16 @@ const pool = new Pool({
   }
 });
 
-// --- МАРШРУТЫ (API) ---
-
-// Маршрут для получения всех заявок
 app.get('/api/entries', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM entries ORDER BY "createdAt" DESC');
     res.json(result.rows);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Ошибка на сервере");
+    res.status(500).send("Server Error");
   }
 });
 
-// Маршрут для добавления новой заявки
 app.post('/api/entries', async (req, res) => {
   try {
     const { clientName, phone, trialDate, trialTime, rop, source, comment, status, createdAt } = req.body;
@@ -45,17 +35,14 @@ app.post('/api/entries', async (req, res) => {
     res.json(newEntry.rows[0]);
   } catch (err) {
     console.error(err);
-    res.status(500).send("Ошибка на сервере");
+    res.status(500).send("Server Error");
   }
 });
 
-// Тестовый маршрут для проверки работы сервера
 app.get('/', (req, res) => {
-    res.send('Сервер Akcent CRM работает!');
+    res.send('Backend for Akcent CRM is working!');
 });
 
-
-// Запускаем сервер
 app.listen(port, () => {
-  console.log(`Сервер запущен на порту ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
