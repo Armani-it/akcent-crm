@@ -877,7 +877,6 @@ const DistributionView = ({
       status: "Назначен",
       trialDate: selectedDate || draggedItem.trialDate,
     })
-    showToast(`${draggedItem.clientName} успешно назначен(а) к ${teacher}`, "success")
     setDraggedItem(null)
   }
 
@@ -2726,11 +2725,30 @@ export default function App() {
   }
 
   const handleUpdateEntry = async (entryId, dataToUpdate) => {
-    // TODO: Добавить PUT/PATCH запрос на бэкенд для обновления записи
-    setEntries((prevEntries) =>
-      prevEntries.map((entry) => (entry.id === entryId ? { ...entry, ...dataToUpdate } : entry)),
-    );
-    showToastMessage("Данные обновлены (локально)", "success");
+    try {
+        const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(dataToUpdate),
+        });
+
+        if (!response.ok) {
+            throw new Error('Ошибка при обновлении на сервере');
+        }
+
+        const updatedEntry = await response.json();
+        setEntries(prevEntries =>
+            prevEntries.map(entry =>
+                entry.id === entryId ? { ...updatedEntry, createdAt: new Date(updatedEntry.createdAt) } : entry
+            )
+        );
+        showToastMessage("Данные успешно обновлены!", "success");
+    } catch (error) {
+        console.error("Ошибка при обновлении заявки:", error);
+        showToastMessage("Не удалось обновить данные на сервере", "error");
+    }
   }
 
   const handleSaveDetails = async (entryId, dataToUpdate) => {
