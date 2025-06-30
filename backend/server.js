@@ -31,7 +31,7 @@ app.post('/api/entries', async (req, res) => {
   try {
     const { clientName, phone, trialDate, trialTime, rop, source, comment, status, createdAt } = req.body;
     const newEntry = await pool.query(
-      'INSERT INTO entries ("clientName", phone, "trialDate", "trialTime", rop, source, comment, status, "createdAt") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+      'INSERT INTO entries ("clientName", phone, "trialDate", "trialTime", rop, source, comment, status, "createdAt", "assignedTeacher", "assignedTime", "paymentType", "packageType", "paymentAmount") VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL, NULL, NULL, NULL, 0) RETURNING *',
       [clientName, phone, trialDate, trialTime, rop, source, comment, status, createdAt]
     );
     res.json(newEntry.rows[0]);
@@ -41,7 +41,7 @@ app.post('/api/entries', async (req, res) => {
   }
 });
 
-// Обновить заявку (НОВЫЙ МАРШРУТ)
+// Обновить заявку
 app.put('/api/entries/:id', async (req, res) => {
     try {
         const { id } = req.params;
