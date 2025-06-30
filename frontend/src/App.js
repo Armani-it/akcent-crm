@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect, useMemo } from "react";
 import {
   X,
   Calendar,
@@ -2608,8 +2608,8 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState(null)
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split("T")[0])
   const [plans, setPlans] = useState({})
-  const [isLoading, setIsLoading] = useState(true); // Показываем загрузку при первом запуске
-  const [entries, setEntries] = useState([]); // Начинаем с пустого списка заявок
+  const [isLoading, setIsLoading] = useState(true);
+  const [entries, setEntries] = useState([]);
   const [blockedSlots, setBlockedSlots] = useState([])
 
   const ropList = useMemo(() => demoUsers.filter((u) => u.role === "rop"), [])
@@ -2622,28 +2622,49 @@ export default function App() {
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [isDetailsReadOnly, setIsDetailsReadOnly] = useState(false)
 
-  // Загрузка данных с сервера при первом запуске приложения
-  useEffect(() => {
-    const fetchEntries = async () => {
-        try {
-            const response = await fetch(`${API_URL}/api/entries`);
-            if (!response.ok) {
-                throw new Error('Не удалось загрузить данные с сервера');
-            }
-            const data = await response.json();
-            // Преобразуем createdAt обратно в объект Date
-            const formattedData = data.map(entry => ({...entry, createdAt: new Date(entry.createdAt)}));
-            setEntries(formattedData);
-        } catch (error) {
-            console.error("Ошибка при загрузке заявок:", error);
-            showToastMessage("Не удалось загрузить данные", "error");
-        } finally {
-            setIsLoading(false);
+  const fetchEntries = async () => {
+    try {
+        const response = await fetch(`${API_URL}/api/entries`);
+        if (!response.ok) {
+            throw new Error('Не удалось загрузить данные с сервера');
         }
-    };
+        const data = await response.json();
+        const formattedData = data.map(entry => ({...entry, createdAt: new Date(entry.createdAt)}));
+        setEntries(formattedData);
+    } catch (error) {
+        console.error("Ошибка при загрузке заявок:", error);
+        showToastMessage("Не удалось загрузить данные", "error");
+    }
+  };
 
-    fetchEntries();
+  // Эффект для первоначальной загрузки данных и восстановления сессии
+  useEffect(() => {
+    const loadInitialData = async () => {
+        setIsLoading(true);
+        const loggedInUser = localStorage.getItem('currentUser');
+        if (loggedInUser) {
+            const user = JSON.parse(loggedInUser);
+            setCurrentUser(user);
+            setView("dashboard");
+        }
+        await fetchEntries();
+        setIsLoading(false);
+    };
+    loadInitialData();
   }, []);
+
+  // Эффект для периодического обновления данных (polling)
+  useEffect(() => {
+    if (currentUser) { // Обновляем данные только если пользователь вошел в систему
+        const interval = setInterval(() => {
+            console.log("Обновление данных...");
+            fetchEntries();
+        }, 15000); // каждые 15 секунд
+
+        return () => clearInterval(interval); // Очистка при размонтировании
+    }
+  }, [currentUser]);
+
 
   const showToastMessage = (message, type = "success") => {
     setToast({ isVisible: true, message, type })
@@ -2653,7 +2674,9 @@ export default function App() {
   const handleLogin = (username, password) => {
     const user = demoUsers.find((u) => u.username === username && u.password === password)
     if (user) {
-      setCurrentUser({ name: user.name, role: user.role })
+      const userToStore = { name: user.name, role: user.role };
+      localStorage.setItem('currentUser', JSON.stringify(userToStore));
+      setCurrentUser(userToStore);
       setShowLoginModal(false)
       showToastMessage(`С возвращением, ${user.name}!`, "success")
       setAdminTab(user.role === "teacher" ? "schedule" : "distribution")
@@ -2664,6 +2687,7 @@ export default function App() {
   }
 
   const handleLogout = () => {
+    localStorage.removeItem('currentUser');
     setCurrentUser(null)
     setView("form")
     showToastMessage("Вы вышли из системы.", "success")
@@ -2726,11 +2750,6 @@ export default function App() {
         packageType: "",
     };
 
-    // Оптимистичное обновление UI
-    const tempId = `temp-${Date.now()}`;
-    const optimisticEntry = { ...newEntryData, id: tempId, createdAt: creationDate };
-    setEntries(prev => [optimisticEntry, ...prev]);
-
     try {
         // Отправка данных на бэкенд
         const response = await fetch(`${API_URL}/api/entries`, {
@@ -2747,10 +2766,8 @@ export default function App() {
 
         const savedEntry = await response.json();
         
-        // Обновляем запись в стейте с реальным ID из базы данных
-        setEntries(prev => prev.map(entry => 
-            entry.id === tempId ? { ...savedEntry, createdAt: new Date(savedEntry.createdAt) } : entry
-        ));
+        // Добавляем новую запись в начало списка для немедленного отображения
+        setEntries(prev => [{ ...savedEntry, createdAt: new Date(savedEntry.createdAt) }, ...prev]);
 
         showToastMessage("Заявка успешно сохранена на сервере!", "success");
 
@@ -2767,8 +2784,6 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при сохранении заявки:", error);
         showToastMessage("Не удалось сохранить заявку на сервере", "error");
-        // Откатываем оптимистичное обновление
-        setEntries(prev => prev.filter(entry => entry.id !== tempId));
     }
 };
 
