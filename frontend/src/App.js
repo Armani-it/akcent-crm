@@ -2748,6 +2748,7 @@ export default function App() {
     setEntries(updatedEntries);
 
     try {
+        // 1. Обновляем данные в основной базе данных
         const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
             method: 'PUT',
             headers: {
@@ -2760,6 +2761,21 @@ export default function App() {
             throw new Error('Ошибка при обновлении на сервере');
         }
         showToastMessage("Данные успешно обновлены!", "success");
+
+        // 2. Обновляем статус в Google Sheets
+        const googleScriptURL = "https://script.google.com/macros/s/AKfycbz1kjY8w94wbK_2bijrEGPzsQVe3PnIHt5BCfMIiKjqA2BkXocneVj2fQIKVt92hr0WxA/exec";
+        const sheetUpdateData = {
+          action: 'update',
+          phone: dataToUpdate.phone, // Используем телефон как уникальный ключ
+          status: dataToUpdate.status // Отправляем новый статус
+        };
+
+        fetch(googleScriptURL, {
+            method: 'POST',
+            mode: 'no-cors',
+            body: JSON.stringify(sheetUpdateData)
+        }).catch(err => console.error("Ошибка при обновлении статуса в Google Sheets:", err));
+
     } catch (error) {
         console.error("Ошибка при обновлении заявки:", error);
         showToastMessage("Не удалось обновить данные на сервере", "error");
