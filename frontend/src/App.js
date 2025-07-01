@@ -2763,7 +2763,7 @@ export default function App() {
         showToastMessage("Данные успешно обновлены!", "success");
 
         // 2. Обновляем статус в Google Sheets
-        const googleScriptURL = "https://script.google.com/macros/s/AKfycbz1kjY8w94wbK_2bijrEGPzsQVe3PnIHt5BCfMIiKjqA2BkXocneVj2fQIKVt92hr0WxA/exec";
+        const googleScriptURL = "https://script.google.com/macros/s/AKfycbzQd1CSvYf4q1l9rQJN6qrHJguNgHtZy0cZpQjM1LGVYPBFZ2ls2etvlOONNgL_pFFUzg/exec";
         const sheetUpdateData = {
           action: 'update',
           phone: dataToUpdate.phone, // Используем телефон как уникальный ключ
@@ -2817,7 +2817,7 @@ export default function App() {
         showToastMessage("Заявка успешно сохранена на сервере!", "success");
 
         // Отправка в Google Sheets
-        const googleScriptURL = "https://script.google.com/macros/s/AKfycbz1kjY8w94wbK_2bijrEGPzsQVe3PnIHt5BCfMIiKjqA2BkXocneVj2fQIKVt92hr0WxA/exec";
+        const googleScriptURL = "https://script.google.com/macros/s/AKfycbzQd1CSvYf4q1l9rQJN6qrHJguNgHtZy0cZpQjM1LGVYPBFZ2ls2etvlOONNgL_pFFUzg/exec";
         const sheetData = { ...newEntryData, createdAt: creationDate.toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' }) };
 
         fetch(googleScriptURL, {
