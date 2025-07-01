@@ -126,6 +126,18 @@ const getRankIcon = (index) => {
   return icons[index] || index + 1
 }
 
+const getAppointmentColorForStatus = (status) => {
+    switch (status) {
+      case "Оплата":
+        return "bg-gradient-to-r from-green-500 to-green-600 text-white"
+      case "Клиент отказ":
+      case "Каспий отказ":
+        return "bg-gradient-to-r from-red-500 to-red-600 text-white"
+      default:
+        return "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+    }
+}
+
 // =================================================================
 //                           COMMON COMPONENTS
 // =================================================================
@@ -853,9 +865,17 @@ const DistributionView = ({
 }) => {
   const [draggedItem, setDraggedItem] = useState(null)
   const [dragOverCell, setDragOverCell] = useState(null)
+  const [selectedEntryForMobile, setSelectedEntryForMobile] = useState(null);
+
+  const isMobile = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 768;
+    }
+    return false;
+  }, []);
 
   const handleDragStart = (e, entry) => {
-    if (readOnly) return
+    if (readOnly || isMobile) return
     setDraggedItem(entry)
     e.dataTransfer.effectAllowed = "move"
     e.dataTransfer.setData("text/plain", entry.id)
@@ -864,7 +884,7 @@ const DistributionView = ({
   const handleDrop = async (e, teacher, time) => {
     e.preventDefault()
     setDragOverCell(null)
-    if (!draggedItem || readOnly) return
+    if (!draggedItem || readOnly || isMobile) return
     const cellKey = `${selectedDate}_${teacher}_${time}`
     if (blockedSlots.some((slot) => slot.id === cellKey)) {
       showToast("Этот слот заблокирован", "error")
@@ -882,16 +902,51 @@ const DistributionView = ({
   }
 
   const handleDragOver = (e) => {
-    if (!readOnly) e.preventDefault()
+    if (!readOnly && !isMobile) e.preventDefault()
   }
 
   const handleDragEnter = (e, teacher, time) => {
-    if (!readOnly) setDragOverCell(`${teacher}-${time}`)
+    if (!readOnly && !isMobile) setDragOverCell(`${teacher}-${time}`)
   }
 
   const handleDragLeave = (e) => {
-    if (!readOnly) setDragOverCell(null)
+    if (!readOnly && !isMobile) setDragOverCell(null)
   }
+  
+  const handleEntryClick = (entry) => {
+    if (readOnly || !isMobile) return;
+    if (selectedEntryForMobile?.id === entry.id) {
+      setSelectedEntryForMobile(null); // Deselect
+    } else {
+      setSelectedEntryForMobile(entry); // Select
+    }
+  };
+
+  const handleCellClick = (teacher, time) => {
+    if (readOnly) return;
+    const cellKey = `${selectedDate}_${teacher}_${time}`
+    const isCellBlocked = blockedSlots.some((slot) => slot.id === cellKey);
+    const isCellOccupied = entries.some(e => e.assignedTeacher === teacher && e.assignedTime === time && e.trialDate === selectedDate);
+
+    if (isMobile) {
+        if (selectedEntryForMobile && !isCellBlocked && !isCellOccupied) {
+            onUpdateEntry(selectedEntryForMobile.id, {
+                ...selectedEntryForMobile,
+                assignedTeacher: teacher,
+                assignedTime: time,
+                status: "Назначен",
+                trialDate: selectedDate,
+            });
+            setSelectedEntryForMobile(null);
+        }
+    } else {
+        // Desktop logic (blocking)
+        if (!isCellOccupied) {
+            onToggleBlockSlot(selectedDate, teacher, time);
+        }
+    }
+  };
+
 
   const today = new Date().toISOString().split("T")[0]
 
@@ -973,13 +1028,15 @@ const DistributionView = ({
                     unassignedEntries.map((entry) => (
                       <div
                         key={entry.id}
-                        draggable={!readOnly}
+                        draggable={!readOnly && !isMobile}
                         onDragStart={(e) => handleDragStart(e, entry)}
-                        className={`p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl transition-all ${
-                          !readOnly
-                            ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transform hover:-translate-y-1"
-                            : "cursor-default"
-                        } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}`}
+                        onClick={() => handleEntryClick(entry)}
+                        className={`p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 rounded-xl transition-all ${
+                          !readOnly && isMobile ? "cursor-pointer" : ""
+                        } ${
+                          !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transform hover:-translate-y-1" : ""
+                        } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
+                          ${selectedEntryForMobile?.id === entry.id ? "border-blue-500 ring-2 ring-blue-500" : "border-blue-200"}`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-bold text-gray-900 text-sm">{entry.clientName}</p>
@@ -1023,13 +1080,15 @@ const DistributionView = ({
                     rescheduledEntries.map((entry) => (
                       <div
                         key={entry.id}
-                        draggable={!readOnly}
+                        draggable={!readOnly && !isMobile}
                         onDragStart={(e) => handleDragStart(e, entry)}
-                        className={`p-4 bg-gradient-to-br from-red-50 to-orange-50 border-2 border-red-200 rounded-xl transition-all ${
-                          !readOnly
-                            ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-red-100 hover:to-orange-100 hover:border-red-300 transform hover:-translate-y-1"
-                            : "cursor-default"
-                        } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}`}
+                        onClick={() => handleEntryClick(entry)}
+                        className={`p-4 bg-gradient-to-br from-red-50 to-orange-50 border-2 rounded-xl transition-all ${
+                          !readOnly && isMobile ? "cursor-pointer" : ""
+                        } ${
+                          !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-red-100 hover:to-orange-100 hover:border-red-300 transform hover:-translate-y-1" : ""
+                        } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
+                          ${selectedEntryForMobile?.id === entry.id ? "border-red-500 ring-2 ring-red-500" : "border-red-200"}`}
                       >
                         <div className="flex items-center justify-between mb-2">
                           <p className="font-bold text-gray-900 text-sm">{entry.clientName}</p>
@@ -1115,9 +1174,11 @@ const DistributionView = ({
                           if (isBlocked) {
                             cellClasses += " bg-gray-200 hover:bg-gray-300"
                           } else if (!assignedEntry && !readOnly) {
-                            if (isDragOver) {
+                            if (isDragOver && !isMobile) {
                               cellClasses +=
                                 " bg-gradient-to-br from-green-200 to-emerald-200 border-green-400 animate-pulse scale-105 border-2 border-dashed"
+                            } else if (selectedEntryForMobile && isMobile) {
+                                cellClasses += " bg-blue-200 border-blue-400 border-2 border-dashed"
                             } else {
                               cellClasses +=
                                 " bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-2 border-dashed border-green-300"
@@ -1131,7 +1192,7 @@ const DistributionView = ({
                               onDragEnter={(e) => handleDragEnter(e, teacher, time)}
                               onDragLeave={handleDragLeave}
                               onDrop={(e) => handleDrop(e, teacher, time)}
-                              onClick={() => !readOnly && !assignedEntry && onToggleBlockSlot(selectedDate, teacher, time)}
+                              onClick={() => handleCellClick(teacher, time)}
                               className={cellClasses}
                             >
                               {assignedEntry ? (
@@ -1140,7 +1201,7 @@ const DistributionView = ({
                                     e.stopPropagation()
                                     onOpenDetails(assignedEntry, readOnly)
                                   }}
-                                  draggable={!readOnly}
+                                  draggable={!readOnly && !isMobile}
                                   onDragStart={(e) => handleDragStart(e, assignedEntry)}
                                   className={`w-full h-full flex items-center justify-center text-white rounded-lg p-2 text-xs font-semibold cursor-pointer transition-all hover:scale-105 shadow-lg transform ${getAppointmentColor(
                                     assignedEntry.status,
@@ -1864,6 +1925,18 @@ const TeacherScheduleView = ({
 
   if (!currentUser) return <Spinner />
 
+  const getAppointmentColor = (status) => {
+    switch (status) {
+      case "Оплата":
+        return "bg-gradient-to-r from-green-500 to-green-600 text-white";
+      case "Клиент отказ":
+      case "Каспий отказ":
+        return "bg-gradient-to-r from-red-500 to-red-600 text-white";
+      default:
+        return "bg-gradient-to-r from-blue-500 to-blue-600 text-white";
+    }
+  };
+
   return (
     <div className="max-w-5xl mx-auto">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -1913,11 +1986,7 @@ const TeacherScheduleView = ({
                               e.stopPropagation()
                               onOpenDetails(entry)
                             }}
-                            className={`rounded-2xl p-4 transition-all hover:scale-[1.02] shadow-lg transform ${
-                              entry.status === "Оплата"
-                                ? "bg-gradient-to-r from-green-500 to-green-600 text-white"
-                                : "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
-                            }`}
+                            className={`rounded-2xl p-4 transition-all hover:scale-[1.02] shadow-lg transform ${getAppointmentColor(entry.status)}`}
                           >
                             <div className="flex justify-between items-center">
                               <div>
