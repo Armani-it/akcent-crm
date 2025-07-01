@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   X,
   Calendar,
@@ -17,8 +17,7 @@ import {
   ArrowLeft,
   Plus,
   Target,
-  WifiOff,
-  User,
+  User as UserIcon,
   Filter,
   DollarSign,
   PieChart,
@@ -326,6 +325,7 @@ const DetailsModal = ({ entry, onClose, onSave, showToast, readOnly = false }) =
     const isRescheduled = currentStatus === "Перенос"
 
     await onSave(entry.id, {
+      ...entry, // Передаем все поля, чтобы не потерять данные
       status: currentStatus,
       trialDate: trialDate,
       assignedTeacher: isRescheduled ? null : entry.assignedTeacher,
@@ -872,6 +872,7 @@ const DistributionView = ({
     }
 
     onUpdateEntry(draggedItem.id, {
+      ...draggedItem,
       assignedTeacher: teacher,
       assignedTime: time,
       status: "Назначен",
@@ -897,7 +898,7 @@ const DistributionView = ({
   const unassignedEntries = useMemo(() => {
     return entries.filter((e) => {
       const isUnassigned = !e.assignedTeacher
-      const hasNoStatusOrPending = !e.status || e.status === "Ожидает"
+      const hasNoStatusOrPending = !e.status || e.status === "Ожидает" || e.status === "Перенос"
       const isFutureOrToday = !e.trialDate || e.trialDate >= today
       return isUnassigned && hasNoStatusOrPending && isFutureOrToday
     })
@@ -2621,20 +2622,39 @@ export default function App() {
   const [selectedEntry, setSelectedEntry] = useState(null)
   const [isDetailsReadOnly, setIsDetailsReadOnly] = useState(false)
 
-  const fetchEntries = async () => {
+  const showToastMessage = useCallback((message, type = "success") => {
+    setToast({ isVisible: true, message, type });
+    setTimeout(() => setToast((prev) => ({ ...prev, isVisible: false })), 4000);
+  }, []);
+
+  const fetchEntries = useCallback(async () => {
     try {
         const response = await fetch(`${API_URL}/api/entries`);
         if (!response.ok) {
-            throw new Error('Не удалось загрузить данные с сервера');
+            throw new Error('Не удалось загрузить данные заявок с сервера');
         }
         const data = await response.json();
         const formattedData = data.map(entry => ({...entry, createdAt: new Date(entry.createdAt)}));
         setEntries(formattedData);
     } catch (error) {
         console.error("Ошибка при загрузке заявок:", error);
-        showToastMessage("Не удалось загрузить данные", "error");
+        showToastMessage("Не удалось загрузить данные заявок", "error");
     }
-  };
+  }, [showToastMessage]);
+
+  const fetchBlockedSlots = useCallback(async () => {
+    try {
+        const response = await fetch(`${API_URL}/api/blocked-slots`);
+        if (!response.ok) {
+            throw new Error('Не удалось загрузить заблокированные слоты');
+        }
+        const data = await response.json();
+        setBlockedSlots(data);
+    } catch (error) {
+        console.error("Ошибка при загрузке заблокированных слотов:", error);
+        showToastMessage("Не удалось загрузить данные о блокировках", "error");
+    }
+  }, [showToastMessage]);
 
   // Эффект для первоначальной загрузки данных и восстановления сессии
   useEffect(() => {
@@ -2646,29 +2666,24 @@ export default function App() {
             setCurrentUser(user);
             setView("dashboard");
         }
-        await fetchEntries();
+        await Promise.all([fetchEntries(), fetchBlockedSlots()]);
         setIsLoading(false);
     };
     loadInitialData();
-  }, []);
+  }, [fetchEntries, fetchBlockedSlots]);
 
   // Эффект для периодического обновления данных (polling)
   useEffect(() => {
     if (currentUser) { // Обновляем данные только если пользователь вошел в систему
         const interval = setInterval(() => {
-            console.log("Обновление данных...");
             fetchEntries();
+            fetchBlockedSlots();
         }, 15000); // каждые 15 секунд
 
         return () => clearInterval(interval); // Очистка при размонтировании
     }
-  }, [currentUser]);
+  }, [currentUser, fetchEntries, fetchBlockedSlots]);
 
-
-  const showToastMessage = (message, type = "success") => {
-    setToast({ isVisible: true, message, type })
-    setTimeout(() => setToast((prev) => ({ ...prev, isVisible: false })), 4000)
-  }
 
   const handleLogin = (username, password) => {
     const user = demoUsers.find((u) => u.username === username && u.password === password)
@@ -2725,6 +2740,13 @@ export default function App() {
   }
 
   const handleUpdateEntry = async (entryId, dataToUpdate) => {
+    // Оптимистичное обновление UI
+    const originalEntries = entries;
+    const updatedEntries = entries.map(entry =>
+        entry.id === entryId ? { ...entry, ...dataToUpdate } : entry
+    );
+    setEntries(updatedEntries);
+
     try {
         const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
             method: 'PUT',
@@ -2737,17 +2759,11 @@ export default function App() {
         if (!response.ok) {
             throw new Error('Ошибка при обновлении на сервере');
         }
-
-        const updatedEntry = await response.json();
-        setEntries(prevEntries =>
-            prevEntries.map(entry =>
-                entry.id === entryId ? { ...updatedEntry, createdAt: new Date(updatedEntry.createdAt) } : entry
-            )
-        );
         showToastMessage("Данные успешно обновлены!", "success");
     } catch (error) {
         console.error("Ошибка при обновлении заявки:", error);
         showToastMessage("Не удалось обновить данные на сервере", "error");
+        setEntries(originalEntries); // Откат изменений в случае ошибки
     }
   }
 
@@ -2761,11 +2777,6 @@ export default function App() {
         ...data,
         createdAt: creationDate.toISOString(), // Отправляем в ISO формате
         status: "Ожидает",
-        assignedTeacher: null,
-        assignedTime: null,
-        paymentAmount: 0,
-        paymentType: "",
-        packageType: "",
     };
 
     try {
@@ -2806,19 +2817,41 @@ export default function App() {
 };
 
   const handleToggleBlockSlot = async (date, teacher, time) => {
-    // TODO: Добавить логику сохранения на бэкенд
-    const docId = `${date}_${teacher}_${time}`
-    setBlockedSlots((prev) => {
-      const existingSlot = prev.find((slot) => slot.id === docId)
-      if (existingSlot) {
-        showToastMessage("Слот разблокирован (локально)", "success")
-        return prev.filter((slot) => slot.id !== docId)
-      } else {
-        showToastMessage("Слот заблокирован (локально)", "success")
-        return [...prev, { id: docId, date, teacher, time }]
-      }
-    })
-  }
+    const docId = `${date}_${teacher}_${time}`;
+    const isBlocked = blockedSlots.some(slot => slot.id === docId);
+    
+    // Оптимистичное обновление
+    const originalSlots = blockedSlots;
+    if (isBlocked) {
+        setBlockedSlots(prev => prev.filter(slot => slot.id !== docId));
+    } else {
+        setBlockedSlots(prev => [...prev, { id: docId, date, teacher, time }]);
+    }
+
+    try {
+        if (isBlocked) {
+            // Удаляем блокировку
+            const response = await fetch(`${API_URL}/api/blocked-slots/${docId}`, {
+                method: 'DELETE',
+            });
+            if (!response.ok) throw new Error("Ошибка при разблокировке");
+            showToastMessage("Слот разблокирован", "success");
+        } else {
+            // Добавляем блокировку
+            const response = await fetch(`${API_URL}/api/blocked-slots`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: docId, date, teacher, time }),
+            });
+            if (!response.ok) throw new Error("Ошибка при блокировке");
+            showToastMessage("Слот заблокирован", "success");
+        }
+    } catch (error) {
+        console.error("Ошибка при изменении блокировки:", error);
+        showToastMessage("Не удалось изменить статус слота", "error");
+        setBlockedSlots(originalSlots); // Откат изменений
+    }
+  };
 
   const dashboardTabs = [
     { id: "distribution", label: "Распределение", adminOnly: true },

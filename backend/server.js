@@ -111,7 +111,7 @@ app.put('/api/entries/:id', async (req, res) => {
     }
 });
 
-// --- МАРШРУТЫ ДЛЯ ЗАБЛОКИРОВАННЫХ СЛОТОВ ---
+// --- МАРШРУТЫ ДЛЯ ЗАБЛОКИРОВАННЫХ СЛОТОВ (НОВОЕ) ---
 
 app.get('/api/blocked-slots', async (req, res) => {
     try {
