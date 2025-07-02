@@ -2832,7 +2832,7 @@ export default function App() {
         showToastMessage("Данные успешно обновлены!", "success");
 
         // 2. Обновляем статус в Google Sheets
-        const googleScriptURL = "https://script.google.com/macros/s/AKfycbzQd1CSvYf4q1l9rQJN6qrHJguNgHtZy0cZpQjM1LGVYPBFZ2ls2etvlOONNgL_pFFUzg/exec";
+        const googleScriptURL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec";
         const sheetUpdateData = {
           action: 'update',
           phone: dataToUpdate.phone, // Используем телефон как уникальный ключ
