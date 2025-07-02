@@ -27,6 +27,7 @@ import {
   BookCopy,
   Lock,
   Unlock,
+  Info,
 } from "lucide-react"
 
 import {
@@ -49,6 +50,7 @@ import {
 //                            CONFIGURATION
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com"; // URL вашего рабочего бэкенда
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec"; // ВАША НОВАЯ ССЫЛКА
 
 // =================================================================
 //                            DEMO DATA & CONSTANTS
@@ -149,18 +151,27 @@ const Spinner = () => (
   </div>
 )
 
-const Toast = ({ message, type, isVisible }) => (
+const Toast = ({ message, type, isVisible }) => {
+  let bgColor = 'bg-gradient-to-r from-red-500 to-red-600'; // default to error
+  if (type === 'success') {
+    bgColor = 'bg-gradient-to-r from-green-500 to-green-600';
+  } else if (type === 'info') {
+    bgColor = 'bg-gradient-to-r from-blue-500 to-blue-600';
+  }
+
+  return (
   <div
     className={`fixed top-6 right-6 px-6 py-4 rounded-xl text-white font-medium shadow-2xl transition-all duration-300 transform z-50 ${
       isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95 pointer-events-none"
-    } ${type === "success" ? "bg-gradient-to-r from-green-500 to-green-600" : "bg-gradient-to-r from-red-500 to-red-600"}`}
+    } ${bgColor}`}
   >
     <div className="flex items-center gap-3">
-      {type === "success" ? <CheckCircle size={20} /> : <XCircle size={20} />}
+      {type === "success" ? <CheckCircle size={20} /> : type === 'info' ? <Info size={20} /> : <XCircle size={20} />}
       <span className="font-medium">{message}</span>
     </div>
   </div>
-)
+  )
+}
 
 const Modal = ({ isVisible, onClose, children, size = "lg" }) => {
   if (!isVisible) return null
@@ -866,6 +877,7 @@ const DistributionView = ({
   const [draggedItem, setDraggedItem] = useState(null)
   const [dragOverCell, setDragOverCell] = useState(null)
   const [selectedEntryForMobile, setSelectedEntryForMobile] = useState(null);
+  const [cellToBlock, setCellToBlock] = useState(null);
 
   const isMobile = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -924,23 +936,41 @@ const DistributionView = ({
 
   const handleCellClick = (teacher, time) => {
     if (readOnly) return;
-    const cellKey = `${selectedDate}_${teacher}_${time}`
+    const cellKey = `${selectedDate}_${teacher}_${time}`;
     const isCellBlocked = blockedSlots.some((slot) => slot.id === cellKey);
     const isCellOccupied = entries.some(e => e.assignedTeacher === teacher && e.assignedTime === time && e.trialDate === selectedDate);
 
     if (isMobile) {
-        if (selectedEntryForMobile && !isCellBlocked && !isCellOccupied) {
-            onUpdateEntry(selectedEntryForMobile.id, {
-                ...selectedEntryForMobile,
-                assignedTeacher: teacher,
-                assignedTime: time,
-                status: "Назначен",
-                trialDate: selectedDate,
-            });
-            setSelectedEntryForMobile(null);
+        if (selectedEntryForMobile) {
+            // Logic for placing an entry
+            if (!isCellBlocked && !isCellOccupied) {
+                onUpdateEntry(selectedEntryForMobile.id, {
+                    ...selectedEntryForMobile,
+                    assignedTeacher: teacher,
+                    assignedTime: time,
+                    status: "Назначен",
+                    trialDate: selectedDate,
+                });
+                setSelectedEntryForMobile(null);
+                setCellToBlock(null);
+            }
+        } else {
+            // Logic for blocking a cell (double tap)
+            if (!isCellOccupied) {
+                if (cellToBlock === cellKey) {
+                    onToggleBlockSlot(selectedDate, teacher, time);
+                    setCellToBlock(null);
+                } else {
+                    setCellToBlock(cellKey);
+                    showToast("Нажмите еще раз для блокировки", "info");
+                    setTimeout(() => {
+                        setCellToBlock(prev => (prev === cellKey ? null : prev));
+                    }, 3000);
+                }
+            }
         }
     } else {
-        // Desktop logic (blocking)
+        // Desktop logic (single click to block)
         if (!isCellOccupied) {
             onToggleBlockSlot(selectedDate, teacher, time);
         }
@@ -952,12 +982,12 @@ const DistributionView = ({
 
   const unassignedEntries = useMemo(() => {
     return entries.filter((e) => {
-      const isUnassigned = !e.assignedTeacher
-      const hasNoStatusOrPending = !e.status || e.status === "Ожидает" || e.status === "Перенос"
-      const isFutureOrToday = !e.trialDate || e.trialDate >= today
-      return isUnassigned && hasNoStatusOrPending && isFutureOrToday
-    })
-  }, [entries, today])
+      const isUnassigned = !e.assignedTeacher;
+      const hasNoStatusOrPending = !e.status || e.status === "Ожидает"; // ИСПРАВЛЕНО: "Перенос" удален
+      const isFutureOrToday = !e.trialDate || e.trialDate >= today;
+      return isUnassigned && hasNoStatusOrPending && isFutureOrToday;
+    });
+  }, [entries, today]);
 
   const rescheduledEntries = useMemo(() => {
     return entries.filter((e) => {
@@ -982,18 +1012,6 @@ const DistributionView = ({
     blockedSlots.forEach((slot) => map.set(slot.id, true))
     return map
   }, [blockedSlots])
-
-  const getAppointmentColor = (status) => {
-    switch (status) {
-      case "Оплата":
-        return "bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
-      case "Клиент отказ":
-      case "Каспий отказ":
-        return "bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700"
-      default:
-        return "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
-    }
-  }
 
   return (
     <div className="space-y-6">
@@ -1165,6 +1183,7 @@ const DistributionView = ({
                           const cellKey = `${selectedDate}_${teacher}_${time}`
                           const isBlocked = blockedSlotsMap.has(cellKey)
                           const isDragOver = dragOverCell === `${teacher}-${time}`
+                          const isPrimedForBlock = cellToBlock === cellKey;
 
                           let cellClasses = "p-2 border-b border-gray-100 h-16 transition-all"
                           if (!readOnly && !assignedEntry) {
@@ -1179,6 +1198,8 @@ const DistributionView = ({
                                 " bg-gradient-to-br from-green-200 to-emerald-200 border-green-400 animate-pulse scale-105 border-2 border-dashed"
                             } else if (selectedEntryForMobile && isMobile) {
                                 cellClasses += " bg-blue-200 border-blue-400 border-2 border-dashed"
+                            } else if (isPrimedForBlock && isMobile) {
+                                cellClasses += " bg-yellow-200 border-yellow-400 border-2 border-dashed"
                             } else {
                               cellClasses +=
                                 " bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-2 border-dashed border-green-300"
@@ -1203,7 +1224,7 @@ const DistributionView = ({
                                   }}
                                   draggable={!readOnly && !isMobile}
                                   onDragStart={(e) => handleDragStart(e, assignedEntry)}
-                                  className={`w-full h-full flex items-center justify-center text-white rounded-lg p-2 text-xs font-semibold cursor-pointer transition-all hover:scale-105 shadow-lg transform ${getAppointmentColor(
+                                  className={`w-full h-full flex items-center justify-center text-white rounded-lg p-2 text-xs font-semibold cursor-pointer transition-all hover:scale-105 shadow-lg transform ${getAppointmentColorForStatus(
                                     assignedEntry.status,
                                   )} ${draggedItem?.id === assignedEntry.id ? "opacity-50 scale-95 rotate-1" : ""}`}
                                 >
@@ -1925,18 +1946,6 @@ const TeacherScheduleView = ({
 
   if (!currentUser) return <Spinner />
 
-  const getAppointmentColor = (status) => {
-    switch (status) {
-      case "Оплата":
-        return "bg-gradient-to-r from-green-500 to-green-600 text-white";
-      case "Клиент отказ":
-      case "Каспий отказ":
-        return "bg-gradient-to-r from-red-500 to-red-600 text-white";
-      default:
-        return "bg-gradient-to-r from-blue-500 to-blue-600 text-white";
-    }
-  };
-
   return (
     <div className="max-w-5xl mx-auto">
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
@@ -1986,7 +1995,7 @@ const TeacherScheduleView = ({
                               e.stopPropagation()
                               onOpenDetails(entry)
                             }}
-                            className={`rounded-2xl p-4 transition-all hover:scale-[1.02] shadow-lg transform ${getAppointmentColor(entry.status)}`}
+                            className={`rounded-2xl p-4 transition-all hover:scale-[1.02] shadow-lg transform ${getAppointmentColorForStatus(entry.status)}`}
                           >
                             <div className="flex justify-between items-center">
                               <div>
@@ -2832,14 +2841,13 @@ export default function App() {
         showToastMessage("Данные успешно обновлены!", "success");
 
         // 2. Обновляем статус в Google Sheets
-        const googleScriptURL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec";
         const sheetUpdateData = {
           action: 'update',
           phone: dataToUpdate.phone, // Используем телефон как уникальный ключ
           status: dataToUpdate.status // Отправляем новый статус
         };
 
-        fetch(googleScriptURL, {
+        fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify(sheetUpdateData)
@@ -2886,10 +2894,9 @@ export default function App() {
         showToastMessage("Заявка успешно сохранена на сервере!", "success");
 
         // Отправка в Google Sheets
-        const googleScriptURL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec";
         const sheetData = { ...newEntryData, createdAt: creationDate.toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' }) };
 
-        fetch(googleScriptURL, {
+        fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
             body: JSON.stringify(sheetData)
