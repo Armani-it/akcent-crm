@@ -50,7 +50,7 @@ import {
 //                            CONFIGURATION
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com"; // URL вашего рабочего бэкенда
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec"; // ВАША НОВАЯ ССЫЛКА
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec";
 
 // =================================================================
 //                            DEMO DATA & CONSTANTS
@@ -66,6 +66,7 @@ const demoUsers = [
   { id: "7", username: "asylbek", password: "password123", role: "rop", name: "Асылбек" },
   { id: "8", username: "miko", password: "password123", role: "rop", name: "Мико" },
   { id: "9", username: "beksultan", password: "password123", role: "rop", name: "Бексұлтан" },
+  { id: "28", username: "nurtileu", password: "password123", role: "rop", name: "Нұртілеу" },
   { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем" },
   { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым" },
   { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла" },
