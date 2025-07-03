@@ -683,42 +683,46 @@ const LoginModal = ({ isVisible, onClose, onLogin }) => {
 const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminLogin, onShowSchedule }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [phone, setPhone] = useState("+7");
+  const [phone, setPhone] = useState("");
 
   const handlePhoneInputChange = (e) => {
     const rawValue = e.target.value;
     let digits = rawValue.replace(/\D/g, '');
 
-    if (digits.length > 0 && !digits.startsWith('7')) {
-      if (digits.startsWith('8')) {
-        digits = '7' + digits.slice(1);
-      } else {
-        digits = '7' + digits;
-      }
-    } else if (rawValue.startsWith('+') && digits.length === 0) {
-      digits = '7';
-    } else if (digits.length === 0) {
-      setPhone('');
+    if (digits.length === 0) {
+      setPhone("");
       return;
     }
 
-    digits = digits.substring(0, 11);
-
-    let formatted = "+7";
-    if (digits.length > 1) {
-        formatted += ` (${digits.substring(1, 4)}`;
-    }
-    if (digits.length >= 5) {
-        formatted += `) ${digits.substring(4, 7)}`;
-    }
-    if (digits.length >= 8) {
-        formatted += `-${digits.substring(7, 9)}`;
-    }
-    if (digits.length >= 10) {
-        formatted += `-${digits.substring(9, 11)}`;
+    // Handle Kazakhstan/Russia country codes (8 -> 7)
+    if (digits.startsWith('8')) {
+      digits = '7' + digits.slice(1);
     }
     
-    setPhone(formatted.substring(0, 18));
+    // Ensure the number starts with '7'
+    if (!digits.startsWith('7')) {
+      digits = '7' + digits;
+    }
+
+    // Limit to 11 digits (7 + 10)
+    digits = digits.slice(0, 11);
+
+    // Apply the formatting mask
+    let formatted = `+${digits[0]}`;
+    if (digits.length > 1) {
+        formatted += ` (${digits.slice(1, 4)}`;
+    }
+    if (digits.length >= 5) {
+        formatted += `) ${digits.slice(4, 7)}`;
+    }
+    if (digits.length >= 8) {
+        formatted += `-${digits.slice(7, 9)}`;
+    }
+    if (digits.length >= 10) {
+        formatted += `-${digits.slice(9, 11)}`;
+    }
+    
+    setPhone(formatted);
   };
 
 
@@ -740,7 +744,7 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
 
     setIsSubmitting(false)
     e.target.reset()
-    setPhone("+7");
+    setPhone("");
     setShowSuccess(true)
   }
 
@@ -795,6 +799,7 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
                   name="phone"
                   value={phone}
                   onChange={handlePhoneInputChange}
+                  placeholder="+7 (___) ___-__-__"
                   required
                   autoComplete="off"
                   className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
