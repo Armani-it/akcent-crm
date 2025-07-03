@@ -50,12 +50,11 @@ import {
 //                            CONFIGURATION
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com"; // URL вашего рабочего бэкенда
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxilG1Biwdv3JaGidTCAh50X30hKDoNUpBtzC3I2IGyHOqXku-MUZy7p-SBbqEcNZ-Xqw/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD328JACl0H7DcbKVByoQKRXr4GfMdYaks_HU6isXojfNJ55E6XjbLDl/exec";
 
 // =================================================================
 //                            DEMO DATA & CONSTANTS
 // =================================================================
-// Пользователи пока остаются локальными, так как на бэкенде нет логики для них
 const demoUsers = [
   { id: "1", username: "admin", password: "password123", role: "admin", name: "Admin" },
   { id: "2", username: "fariza", password: "password123", role: "rop", name: "Фариза" },
@@ -118,6 +117,27 @@ const generateTimeSlots = () => {
 // =================================================================
 //                           HELPER FUNCTIONS
 // =================================================================
+
+const formatPhoneNumber = (phoneStr) => {
+  if (!phoneStr) return "";
+  let cleaned = ('' + phoneStr).replace(/\D/g, '');
+  
+  if (cleaned.length === 11 && cleaned.startsWith('8')) {
+    cleaned = '7' + cleaned.slice(1);
+  }
+
+  if (cleaned.length === 10 && !cleaned.startsWith('7')) {
+      cleaned = '7' + cleaned;
+  }
+
+  const match = cleaned.match(/^7(\d{3})(\d{3})(\d{2})(\d{2})$/);
+  if (match) {
+    return `+7 (${match[1]}) ${match[2]}-${match[3]}-${match[4]}`;
+  }
+  
+  return phoneStr;
+};
+
 
 const getRankColor = (index) => {
   const colors = ["from-yellow-400 to-yellow-600", "from-gray-400 to-gray-600", "from-orange-400 to-orange-600"]
@@ -418,7 +438,7 @@ const DetailsModal = ({ entry, onClose, onSave, showToast, readOnly = false }) =
                   <Phone className="w-5 h-5 text-gray-400" />
                   <div>
                     <span className="text-gray-500 block">Телефон</span>
-                    <p className="font-semibold text-gray-900">{entry.phone}</p>
+                    <p className="font-semibold text-gray-900">{formatPhoneNumber(entry.phone)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
@@ -663,6 +683,44 @@ const LoginModal = ({ isVisible, onClose, onLogin }) => {
 const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminLogin, onShowSchedule }) => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
+  const [phone, setPhone] = useState("+7");
+
+  const handlePhoneInputChange = (e) => {
+    const rawValue = e.target.value;
+    let digits = rawValue.replace(/\D/g, '');
+
+    if (digits.length > 0 && !digits.startsWith('7')) {
+      if (digits.startsWith('8')) {
+        digits = '7' + digits.slice(1);
+      } else {
+        digits = '7' + digits;
+      }
+    } else if (rawValue.startsWith('+') && digits.length === 0) {
+      digits = '7';
+    } else if (digits.length === 0) {
+      setPhone('');
+      return;
+    }
+
+    digits = digits.substring(0, 11);
+
+    let formatted = "+7";
+    if (digits.length > 1) {
+        formatted += ` (${digits.substring(1, 4)}`;
+    }
+    if (digits.length >= 5) {
+        formatted += `) ${digits.substring(4, 7)}`;
+    }
+    if (digits.length >= 8) {
+        formatted += `-${digits.substring(7, 9)}`;
+    }
+    if (digits.length >= 10) {
+        formatted += `-${digits.substring(9, 11)}`;
+    }
+    
+    setPhone(formatted.substring(0, 18));
+  };
+
 
   const handleFormSubmit = async (e) => {
     e.preventDefault()
@@ -670,6 +728,7 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
 
     const formData = new FormData(e.target)
     const data = Object.fromEntries(formData.entries())
+    data.phone = phone; // Используем отформатированный номер из состояния
 
     if (!data.rop) {
       showToast("Пожалуйста, выберите РОП", "error")
@@ -681,6 +740,7 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
 
     setIsSubmitting(false)
     e.target.reset()
+    setPhone("+7");
     setShowSuccess(true)
   }
 
@@ -733,11 +793,11 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
                   type="tel"
                   id="phone-number"
                   name="phone"
-                  defaultValue="+7"
+                  value={phone}
+                  onChange={handlePhoneInputChange}
                   required
                   autoComplete="off"
                   className="w-full p-4 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all font-medium"
-                  placeholder="+7 (___) ___-__-__"
                 />
               </div>
               <div>
@@ -927,11 +987,18 @@ const DistributionView = ({
   }
   
   const handleEntryClick = (entry) => {
-    if (readOnly || !isMobile) return;
-    if (selectedEntryForMobile?.id === entry.id) {
-      setSelectedEntryForMobile(null); // Deselect
+    if (readOnly) {
+       onOpenDetails(entry, true);
+       return;
+    }
+    if (isMobile) {
+      if (selectedEntryForMobile?.id === entry.id) {
+        setSelectedEntryForMobile(null); // Deselect
+      } else {
+        setSelectedEntryForMobile(entry); // Select
+      }
     } else {
-      setSelectedEntryForMobile(entry); // Select
+        onOpenDetails(entry, readOnly);
     }
   };
 
@@ -1051,7 +1118,7 @@ const DistributionView = ({
                         onDragStart={(e) => handleDragStart(e, entry)}
                         onClick={() => handleEntryClick(entry)}
                         className={`p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 rounded-xl transition-all ${
-                          !readOnly && isMobile ? "cursor-pointer" : ""
+                          !readOnly ? "cursor-pointer" : ""
                         } ${
                           !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transform hover:-translate-y-1" : ""
                         } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
@@ -1103,7 +1170,7 @@ const DistributionView = ({
                         onDragStart={(e) => handleDragStart(e, entry)}
                         onClick={() => handleEntryClick(entry)}
                         className={`p-4 bg-gradient-to-br from-red-50 to-orange-50 border-2 rounded-xl transition-all ${
-                          !readOnly && isMobile ? "cursor-pointer" : ""
+                          !readOnly ? "cursor-pointer" : ""
                         } ${
                           !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-red-100 hover:to-orange-100 hover:border-red-300 transform hover:-translate-y-1" : ""
                         } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
@@ -1256,8 +1323,21 @@ const DistributionView = ({
   )
 }
 
-const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false }) => {
+const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false, onFilterBySource }) => {
   const [filters, setFilters] = useState({ startDate: "", endDate: "", rop: "", source: "", status: "", paymentType: "" });
+
+  const sourceCounts = useMemo(() => {
+    const counts = {};
+    ALL_SOURCES.forEach(source => {
+      counts[source] = 0;
+    });
+    entries.forEach(entry => {
+      if (counts[entry.source] !== undefined) {
+        counts[entry.source]++;
+      }
+    });
+    return counts;
+  }, [entries]);
 
   const filteredEntries = useMemo(() => {
     return entries
@@ -1293,6 +1373,10 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false }) =
   const handleFilterChange = (e) => {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }))
   }
+  
+  const handleSourceButtonClick = (source) => {
+    setFilters(prev => ({...prev, source: source}));
+  };
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -1320,6 +1404,16 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false }) =
         </h3>
       </div>
       <div className="p-8 bg-gradient-to-r from-gray-50 to-gray-100 border-b border-gray-200">
+        <div className="flex flex-wrap gap-2 mb-4">
+            <button onClick={() => handleSourceButtonClick("")} className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${!filters.source ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-200'}`}>
+                Все ({entries.length})
+            </button>
+            {ALL_SOURCES.map(source => (
+                <button key={source} onClick={() => handleSourceButtonClick(source)} className={`px-4 py-2 text-sm font-semibold rounded-full transition-colors ${filters.source === source ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-700 hover:bg-gray-200'}`}>
+                    {source} ({sourceCounts[source]})
+                </button>
+            ))}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">Начало периода</label>
@@ -1358,24 +1452,6 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false }) =
             </select>
           </div>
           <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">Источник</label>
-            <select
-              name="source"
-              value={filters.source}
-              onChange={handleFilterChange}
-              className="w-full p-3 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-medium"
-            >
-              <option value="">Все источники</option>
-              {ALL_SOURCES.map(
-                (s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ),
-              )}
-            </select>
-          </div>
-          <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">Статус</label>
             <select
               name="status"
@@ -1390,27 +1466,6 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false }) =
                 </option>
               ))}
             </select>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-700 mb-2">Тип оплаты</label>
-            <select
-              name="paymentType"
-              value={filters.paymentType}
-              onChange={handleFilterChange}
-              className="w-full p-3 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-medium"
-            >
-              <option value="">Все типы</option>
-              <option value="Чек">Чек</option>
-              <option value="Предоплаты">Предоплаты</option>
-            </select>
-          </div>
-           <div className="lg:col-span-2 flex items-end">
-            <button
-              onClick={() => setFilters({ startDate: "", endDate: "", rop: "", source: "", status: "", paymentType: "" })}
-              className="w-full px-4 py-3 bg-gradient-to-r from-gray-400 to-gray-500 text-white rounded-xl hover:from-gray-500 hover:to-gray-600 transition-all font-bold"
-            >
-              Сбросить
-            </button>
           </div>
         </div>
       </div>
@@ -1440,7 +1495,7 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false }) =
                 <td className="px-8 py-6 whitespace-nowrap">
                   <div className="font-bold text-gray-900">{entry.clientName}</div>
                 </td>
-                <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-600 font-medium">{entry.phone}</td>
+                <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-600 font-medium">{formatPhoneNumber(entry.phone)}</td>
                 <td className="px-8 py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
                   {entry.trialDate} {entry.trialTime}
                 </td>
@@ -1663,7 +1718,7 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
                   <p className="text-3xl font-black text-green-600">{rop.cash.toLocaleString("ru-RU")} ₸</p>
                   {rop.plan > 0 && (
                     <p className="text-sm text-gray-500 font-medium">
-                      Осталось: {rop.cashRemaining.toLocaleString("ru-RU")} ₸
+                      Осталось: {rop.cashRemaining.toLocaleString("ru-RU")} ₸ 
                     </p>
                   )}
                 </div>
@@ -2001,7 +2056,7 @@ const TeacherScheduleView = ({
                             <div className="flex justify-between items-center">
                               <div>
                                 <p className="font-bold text-lg">{entry.clientName}</p>
-                                <p className="text-sm opacity-90">{entry.phone}</p>
+                                <p className="text-sm opacity-90">{formatPhoneNumber(entry.phone)}</p>
                               </div>
                               <div className="text-right">
                                 <p className="text-sm opacity-90 font-semibold">{entry.rop}</p>
@@ -2244,6 +2299,53 @@ const BreakdownList = ({ title, data }) => (
     </div>
 );
 
+const TrialSourceChart = ({ title, data }) => (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <h3 className="font-bold text-xl text-gray-900 mb-6">{title}</h3>
+        <div className="w-full" style={{ height: `${Math.max(120, data.length * 45)}px` }}>
+            {data.length > 0 ? (
+                <ResponsiveContainer>
+                    <BarChart
+                        layout="vertical"
+                        data={data}
+                        margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
+                    >
+                        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+                        <XAxis type="number" hide />
+                        <YAxis
+                            yAxisId={0}
+                            dataKey="name"
+                            type="category"
+                            axisLine={false}
+                            tickLine={false}
+                            width={120}
+                            style={{ fontSize: '12px' }}
+                        />
+                        <YAxis
+                            yAxisId={1}
+                            orientation="right"
+                            dataKey="count"
+                            type="category"
+                            axisLine={false}
+                            tickLine={false}
+                            tickFormatter={(value) => `${value}`}
+                            style={{ fontSize: '12px', fill: '#6b7280' }}
+                        />
+                        <Tooltip formatter={(value) => [`${value} пробных`, 'Количество']} />
+                        <Bar yAxisId={0} dataKey="count" name="Пробные" fill="#8884d8" radius={[0, 4, 4, 0]} maxBarSize={25}>
+                           <LabelList dataKey="name" position="insideLeft" style={{ fill: 'white', fontSize: '12px', fontWeight: 'bold' }} />
+                        </Bar>
+                    </BarChart>
+                </ResponsiveContainer>
+            ) : (
+                <div className="flex items-center justify-center h-full">
+                    <p className="text-gray-500 text-center py-8">Нет данных для отображения.</p>
+                </div>
+            )}
+        </div>
+    </div>
+);
+
 
 const CombinedCashTrialsChart = ({ data }) => {
     const chartData = data.labels.map((label, i) => ({
@@ -2355,7 +2457,7 @@ const AnalyticsView = ({ entries, ropList }) => {
     })
   }, [entries, filters])
 
-  const { totalCash, averageCheck, sourceStats, ropStats, funnelStats, correlationData, reachabilityStats } =
+  const { totalCash, averageCheck, sourceStats, ropStats, funnelStats, correlationData, reachabilityStats, trialSourceStats } =
     useMemo(() => {
       const paidEntries = filteredEntries.filter((entry) => entry.status === "Оплата")
       const cash = paidEntries.reduce((sum, entry) => sum + (Number(entry.paymentAmount) || 0), 0)
@@ -2364,10 +2466,17 @@ const AnalyticsView = ({ entries, ropList }) => {
 
       const tempSourceStats = {}
       const tempRopStats = {}
-      paidEntries.forEach((entry) => {
-        const amount = Number(entry.paymentAmount) || 0
-        if (entry.source) tempSourceStats[entry.source] = (tempSourceStats[entry.source] || 0) + amount
-        if (entry.rop) tempRopStats[entry.rop] = (tempRopStats[entry.rop] || 0) + amount
+      const tempTrialSourceStats = {}
+      
+      filteredEntries.forEach((entry) => {
+        if (entry.source) {
+            tempTrialSourceStats[entry.source] = (tempTrialSourceStats[entry.source] || 0) + 1;
+        }
+        if (entry.status === "Оплата") {
+            const amount = Number(entry.paymentAmount) || 0
+            if (entry.source) tempSourceStats[entry.source] = (tempSourceStats[entry.source] || 0) + amount
+            if (entry.rop) tempRopStats[entry.rop] = (tempRopStats[entry.rop] || 0) + amount
+        }
       })
 
       const scheduledTrials = filteredEntries.filter((e) => ["Назначен", "Проведен", "Оплата"].includes(e.status)).length
@@ -2424,6 +2533,9 @@ const AnalyticsView = ({ entries, ropList }) => {
         ropStats: Object.entries(tempRopStats)
           .map(([name, amount]) => ({ name, amount }))
           .sort((a, b) => b.amount - a.amount),
+        trialSourceStats: Object.entries(tempTrialSourceStats)
+          .map(([name, count]) => ({ name, count }))
+          .sort((a, b) => b.count - a.count),
         funnelStats: funnel,
         correlationData: correlation,
         reachabilityStats: reachability,
@@ -2592,6 +2704,10 @@ const AnalyticsView = ({ entries, ropList }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <BreakdownList title="Касса по источникам" data={sourceStats} />
         <BreakdownList title="Касса по РОП" data={ropStats} />
+      </div>
+      
+      <div className="mt-8">
+        <TrialSourceChart title="Количество пробных по источникам" data={trialSourceStats} />
       </div>
     </div>
   )
@@ -2942,7 +3058,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при изменении блокировки:", error);
         showToastMessage("Не удалось изменить статус слота", "error");
-        setBlockedSlots(originalSlots); // Откат изменений
+        setBlockedSlots(originalSlots); // Откат изменений в случае ошибки
     }
   };
 
@@ -3058,16 +3174,22 @@ export default function App() {
                       return (
                         <td key={`${teacher}-${time}`} className="p-2 border-b border-gray-100 h-20 text-center">
                           <div
-                            className={`h-full w-full rounded-xl border flex items-center justify-center p-1 ${
-                              entry || isBlocked ? "bg-red-100 border-red-200" : "bg-green-50 border-green-200"
+                            onClick={() => entry && props.onOpenDetails(entry, true)}
+                            className={`h-full w-full rounded-xl border flex flex-col items-center justify-center p-1 text-xs font-semibold transition-all ${
+                              entry ? `${getAppointmentColorForStatus(entry.status)} cursor-pointer` : 
+                              isBlocked ? "bg-gray-200 border-gray-200" : "bg-green-50 border-green-200"
                             }`}
                           >
                             {entry ? (
-                              <span className="text-red-800 font-bold text-xs truncate">{entry.clientName}</span>
+                              <>
+                                <span className="font-bold truncate">{entry.clientName}</span>
+                                <span className="opacity-80 truncate">{entry.status}</span>
+                                {entry.paymentAmount > 0 && <span className="opacity-80 truncate">{entry.paymentAmount.toLocaleString("ru-RU")} ₸</span>}
+                              </>
                             ) : isBlocked ? (
                               <Lock className="w-5 h-5 text-gray-400" />
                             ) : (
-                              <Check className="w-5 h-5 text-green-500" />
+                              <Check className="w-5 h-5 text-green-400" />
                             )}
                           </div>
                         </td>
@@ -3136,6 +3258,7 @@ export default function App() {
             entries={entries}
             teacherSchedule={teacherSchedule}
             blockedSlots={blockedSlots}
+            onOpenDetails={handleOpenDetails}
           />
         )
 
