@@ -50,7 +50,7 @@ import {
 //                            CONFIGURATION
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com"; // URL вашего рабочего бэкенда
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD328JACl0H7DcbKVByoQKRXr4GfMdYaks_HU6isXojfNJ55E6XjbLDl/exec";
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwULoqZhVRI1cunYJiwZ8w-ftknCp3GRJrYJNRywvGf5f-bNF25VVOHv9GmkcS37H2E/exec";
 
 // =================================================================
 //                            DEMO DATA & CONSTANTS
