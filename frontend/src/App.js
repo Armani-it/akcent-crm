@@ -96,6 +96,7 @@ const ALL_SOURCES = [
   "Телеграм",
   "Блогер",
   "База-лид",
+  "Деңгей анықтау",
 ]
 
 const generateTimeSlots = () => {
@@ -1544,6 +1545,27 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false, onF
 const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) => {
   const [showPlanModal, setShowPlanModal] = useState(false)
   const [currentTime, setCurrentTime] = useState(new Date())
+  const toDateString = (date) => date.toISOString().split("T")[0];
+  const [dateRange, setDateRange] = useState({
+    startDate: toDateString(new Date()),
+    endDate: toDateString(new Date()),
+  });
+
+  const handleDateChange = (e) => {
+    setDateRange(prev => ({...prev, [e.target.name]: e.target.value}));
+  };
+
+  const filteredEntries = useMemo(() => {
+    const start = dateRange.startDate ? new Date(dateRange.startDate) : null;
+    const end = dateRange.endDate ? new Date(dateRange.endDate) : null;
+    if (start) start.setHours(0, 0, 0, 0);
+    if (end) end.setHours(23, 59, 59, 999);
+
+    return entries.filter(entry => {
+        const entryDate = new Date(entry.createdAt);
+        return (!start || entryDate >= start) && (!end || entryDate <= end);
+    });
+  }, [entries, dateRange]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1558,7 +1580,7 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
     ropList.forEach((rop) => {
       stats[rop.name] = { trials: 0, cash: 0, plan: plans[rop.name] || 0, trialPlan: plans[`${rop.name}_trial`] || 0 }
     })
-    entries.forEach((entry) => {
+    filteredEntries.forEach((entry) => {
       if (stats[entry.rop]) {
         stats[entry.rop].trials += 1
         if (entry.status === "Оплата") {
@@ -1576,7 +1598,7 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
         trialRemaining: Math.max(data.trialPlan - data.trials, 0),
       }))
       .sort((a, b) => b.cash - a.cash)
-  }, [entries, ropList, plans])
+  }, [filteredEntries, ropList, plans])
 
   const hourlyProgress = useMemo(() => {
     const now = currentTime
@@ -1606,7 +1628,7 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
     }
   }, [entries, currentTime])
 
-  const totalTrials = entries.length
+  const totalTrials = filteredEntries.length
   const totalCash = leaderboardData.reduce((sum, rop) => sum + rop.cash, 0)
   const totalPlan = leaderboardData.reduce((sum, rop) => sum + rop.plan, 0)
   const totalTrialPlan = leaderboardData.reduce((sum, rop) => sum + rop.trialPlan, 0)
@@ -1633,6 +1655,33 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
            </button>
          )}
        </div>
+
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+          <h3 className="font-bold text-lg text-gray-900 mb-4">Фильтр по дате</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Начальная дата</label>
+                  <input
+                      type="date"
+                      name="startDate"
+                      value={dateRange.startDate}
+                      onChange={handleDateChange}
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl font-medium"
+                  />
+              </div>
+              <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Конечная дата</label>
+                  <input
+                      type="date"
+                      name="endDate"
+                      value={dateRange.endDate}
+                      onChange={handleDateChange}
+                      className="w-full p-3 border-2 border-gray-200 rounded-xl font-medium"
+                  />
+              </div>
+          </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-3xl p-6 text-white shadow-2xl">
           <div className="flex items-center justify-between">
