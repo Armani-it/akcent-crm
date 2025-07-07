@@ -1232,17 +1232,17 @@ const DistributionView = ({
               </h3>
             </div>
             <div className="p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
+              <div className="overflow-auto max-h-[70vh]">
+                <table className="w-full border-collapse relative">
                   <thead>
                     <tr>
-                      <th className="sticky left-0 bg-white p-3 border-b-2 border-gray-200 font-bold text-gray-900 text-left min-w-[80px] z-10 text-sm">
+                      <th className="sticky top-0 left-0 bg-gray-100 p-3 border-b-2 border-gray-200 font-bold text-gray-900 text-left min-w-[80px] z-30 text-sm">
                         Время
                       </th>
                       {teacherSchedule.teachers.map((teacher) => (
                         <th
                           key={teacher}
-                          className="p-3 border-b-2 border-gray-200 font-bold text-gray-900 min-w-[120px] text-center text-sm"
+                          className="sticky top-0 bg-gray-100 p-3 border-b-2 border-gray-200 font-bold text-gray-900 min-w-[120px] text-center text-sm z-20"
                         >
                           {teacher}
                         </th>
@@ -3123,7 +3123,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при изменении блокировки:", error);
         showToastMessage("Не удалось изменить статус слота", "error");
-        setBlockedSlots(originalSlots); // Откат изменений в случае ошибки
+        setEntries(originalEntries); // Откат изменений в случае ошибки
     }
   };
 
