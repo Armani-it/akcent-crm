@@ -84,6 +84,7 @@ const demoUsers = [
   { id: "25", username: "zhuldyz", password: "password123", role: "teacher", name: "Жұлдыз" },
   { id: "26", username: "korlan", password: "password123", role: "teacher", name: "Қорлан" },
   { id: "27", username: "uki", password: "password123", role: "teacher", name: "Үкі" },
+  { id: "29", username: "laura", password: "password123", role: "teacher", name: "Лаура" },
 ]
 
 const ALL_SOURCES = [
@@ -1104,108 +1105,110 @@ const DistributionView = ({
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {!readOnly && (
-          <div className="lg:col-span-1 space-y-6">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
-                  <div className="w-4 h-4 bg-blue-400 rounded-full animate-pulse"></div>Новые заявки
-                  <span className="ml-auto bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold px-3 py-1 rounded-full">
-                    {unassignedEntries.length}
-                  </span>
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4 max-h-[40vh] overflow-y-auto">
-                  {unassignedEntries.length > 0 ? (
-                    unassignedEntries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        draggable={!readOnly && !isMobile}
-                        onDragStart={(e) => handleDragStart(e, entry)}
-                        onClick={() => handleEntryClick(entry)}
-                        className={`p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 rounded-xl transition-all ${
-                          !readOnly ? "cursor-pointer" : ""
-                        } ${
-                          !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transform hover:-translate-y-1" : ""
-                        } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
-                          ${selectedEntryForMobile?.id === entry.id ? "border-blue-500 ring-2 ring-blue-500" : "border-blue-200"}`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-bold text-gray-900 text-sm">{entry.clientName}</p>
-                          <div className="text-gray-400">
-                            <ArrowLeft className="w-4 h-4" />
+          <div className="lg:col-span-1">
+            <div className="lg:sticky lg:top-24 space-y-6 max-h-[calc(100vh-7rem)] overflow-y-auto p-1 rounded-2xl">
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+                  <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
+                    <div className="w-4 h-4 bg-blue-400 rounded-full animate-pulse"></div>Новые заявки
+                    <span className="ml-auto bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                      {unassignedEntries.length}
+                    </span>
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4 max-h-[40vh] overflow-y-auto">
+                    {unassignedEntries.length > 0 ? (
+                      unassignedEntries.map((entry) => (
+                        <div
+                          key={entry.id}
+                          draggable={!readOnly && !isMobile}
+                          onDragStart={(e) => handleDragStart(e, entry)}
+                          onClick={() => handleEntryClick(entry)}
+                          className={`p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 rounded-xl transition-all ${
+                            !readOnly ? "cursor-pointer" : ""
+                          } ${
+                            !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transform hover:-translate-y-1" : ""
+                          } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
+                            ${selectedEntryForMobile?.id === entry.id ? "border-blue-500 ring-2 ring-blue-500" : "border-blue-200"}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-bold text-gray-900 text-sm">{entry.clientName}</p>
+                            <div className="text-gray-400">
+                              <ArrowLeft className="w-4 h-4" />
+                            </div>
                           </div>
+                          <p className="text-xs text-gray-600 mb-2 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {entry.trialDate} {entry.trialTime}
+                          </p>
+                          <p className="text-xs text-blue-700 bg-blue-200 px-2 py-1 rounded-full inline-flex items-center gap-1 font-semibold">
+                            <Users className="w-3 h-3" />
+                            {entry.rop}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {entry.trialDate} {entry.trialTime}
-                        </p>
-                        <p className="text-xs text-blue-700 bg-blue-200 px-2 py-1 rounded-full inline-flex items-center gap-1 font-semibold">
-                          <Users className="w-3 h-3" />
-                          {entry.rop}
-                        </p>
+                      ))
+                    ) : (
+                      <div className="text-center py-12">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <Calendar className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium text-sm">Нет новых заявок</p>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Calendar className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 font-medium text-sm">Нет новых заявок</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-              <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-orange-50">
-                <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
-                  <div className="w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>Перенесенные
-                  <span className="ml-auto bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-bold px-3 py-1 rounded-full">
-                    {rescheduledEntries.length}
-                  </span>
-                </h3>
-              </div>
-              <div className="p-6">
-                <div className="space-y-4 max-h-[25vh] overflow-y-auto">
-                  {rescheduledEntries.length > 0 ? (
-                    rescheduledEntries.map((entry) => (
-                      <div
-                        key={entry.id}
-                        draggable={!readOnly && !isMobile}
-                        onDragStart={(e) => handleDragStart(e, entry)}
-                        onClick={() => handleEntryClick(entry)}
-                        className={`p-4 bg-gradient-to-br from-red-50 to-orange-50 border-2 rounded-xl transition-all ${
-                          !readOnly ? "cursor-pointer" : ""
-                        } ${
-                          !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-red-100 hover:to-orange-100 hover:border-red-300 transform hover:-translate-y-1" : ""
-                        } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
-                          ${selectedEntryForMobile?.id === entry.id ? "border-red-500 ring-2 ring-red-500" : "border-red-200"}`}
-                      >
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-bold text-gray-900 text-sm">{entry.clientName}</p>
-                          <div className="text-gray-400">
-                            <ArrowLeft className="w-4 h-4" />
+              <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
+                <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-orange-50">
+                  <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
+                    <div className="w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>Перенесенные
+                    <span className="ml-auto bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-bold px-3 py-1 rounded-full">
+                      {rescheduledEntries.length}
+                    </span>
+                  </h3>
+                </div>
+                <div className="p-6">
+                  <div className="space-y-4 max-h-[25vh] overflow-y-auto">
+                    {rescheduledEntries.length > 0 ? (
+                      rescheduledEntries.map((entry) => (
+                        <div
+                          key={entry.id}
+                          draggable={!readOnly && !isMobile}
+                          onDragStart={(e) => handleDragStart(e, entry)}
+                          onClick={() => handleEntryClick(entry)}
+                          className={`p-4 bg-gradient-to-br from-red-50 to-orange-50 border-2 rounded-xl transition-all ${
+                            !readOnly ? "cursor-pointer" : ""
+                          } ${
+                            !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-red-100 hover:to-orange-100 hover:border-red-300 transform hover:-translate-y-1" : ""
+                          } ${draggedItem?.id === entry.id ? "opacity-50 scale-95 rotate-2" : ""}
+                            ${selectedEntryForMobile?.id === entry.id ? "border-red-500 ring-2 ring-red-500" : "border-red-200"}`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <p className="font-bold text-gray-900 text-sm">{entry.clientName}</p>
+                            <div className="text-gray-400">
+                              <ArrowLeft className="w-4 h-4" />
+                            </div>
                           </div>
+                          <p className="text-xs text-gray-600 mb-2 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {entry.trialDate} {entry.trialTime}
+                          </p>
+                          <p className="text-xs text-red-700 bg-red-200 px-2 py-1 rounded-full inline-flex items-center gap-1 font-semibold">
+                            <Users className="w-3 h-3" />
+                            {entry.rop}
+                          </p>
                         </div>
-                        <p className="text-xs text-gray-600 mb-2 flex items-center gap-1">
-                          <Clock className="w-3 h-3" />
-                          {entry.trialDate} {entry.trialTime}
-                        </p>
-                        <p className="text-xs text-red-700 bg-red-200 px-2 py-1 rounded-full inline-flex items-center gap-1 font-semibold">
-                          <Users className="w-3 h-3" />
-                          {entry.rop}
-                        </p>
+                      ))
+                    ) : (
+                      <div className="text-center py-8">
+                        <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                          <History className="w-8 h-8 text-gray-400" />
+                        </div>
+                        <p className="text-gray-500 font-medium text-sm">Нет перенесенных заявок</p>
                       </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <History className="w-8 h-8 text-gray-400" />
-                      </div>
-                      <p className="text-gray-500 font-medium text-sm">Нет перенесенных заявок</p>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
@@ -1588,7 +1591,8 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
         }
       }
     })
-    return Object.entries(stats)
+    
+    const dataForSorting = Object.entries(stats)
       .map(([name, data]) => ({
         name,
         ...data,
@@ -1596,8 +1600,15 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
         trialProgress: data.trialPlan > 0 ? Math.min((data.trials / data.trialPlan) * 100, 100) : 0,
         cashRemaining: Math.max(data.plan - data.cash, 0),
         trialRemaining: Math.max(data.trialPlan - data.trials, 0),
-      }))
-      .sort((a, b) => b.cash - a.cash)
+      }));
+
+    const totalCashInPeriod = dataForSorting.reduce((sum, rop) => sum + rop.cash, 0);
+
+    if (totalCashInPeriod > 0) {
+        return dataForSorting.sort((a, b) => b.cash - a.cash);
+    } else {
+        return dataForSorting.sort((a, b) => b.trials - a.trials);
+    }
   }, [filteredEntries, ropList, plans])
 
   const hourlyProgress = useMemo(() => {
