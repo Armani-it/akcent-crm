@@ -56,7 +56,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD
 //                            DEMO DATA & CONSTANTS
 // =================================================================
 const demoUsers = [
-  { id: "1", username: "admin", password: "password123", role: "admin", name: "Admin" },
+  { id: "1", username: "admin", password: "Akcent2026", role: "admin", name: "Admin" },
   { id: "2", username: "fariza", password: "password123", role: "rop", name: "Фариза" },
   { id: "3", username: "ayana", password: "password123", role: "rop", name: "Аяна" },
   { id: "4", username: "aziza", password: "password123", role: "rop", name: "Азиза" },
