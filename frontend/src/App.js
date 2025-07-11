@@ -66,6 +66,7 @@ const demoUsers = [
   { id: "8", username: "miko", password: "password123", role: "rop", name: "Мико" },
   { id: "9", username: "beksultan", password: "password123", role: "rop", name: "Бексұлтан" },
   { id: "28", username: "nurtileu", password: "password123", role: "rop", name: "Нұртілеу" },
+  { id: "30", username: "kadir", password: "password123", role: "rop", name: "Қадір" },
   { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем" },
   { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым" },
   { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла" },
@@ -3038,7 +3039,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при обновлении заявки:", error);
         showToastMessage("Не удалось обновить данные на сервере", "error");
-        setEntries(originalEntries); // Откат изменений в случае ошибки
+        setEntries(originalEntries);
     }
   }
 
@@ -3123,7 +3124,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при изменении блокировки:", error);
         showToastMessage("Не удалось изменить статус слота", "error");
-        setBlockedSlots(originalSlots);
+        setEntries(originalEntries);
     }
   };
 
