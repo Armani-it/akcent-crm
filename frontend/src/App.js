@@ -3124,7 +3124,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при изменении блокировки:", error);
         showToastMessage("Не удалось изменить статус слота", "error");
-        setEntries(originalEntries);
+        setBlockedSlots(originalSlots);
     }
   };
 
