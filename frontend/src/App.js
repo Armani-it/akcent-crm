@@ -185,13 +185,13 @@ const Toast = ({ message, type, isVisible }) => {
 
   return (
   <div
-    className={`fixed top-6 right-6 px-6 py-4 rounded-xl text-white font-medium shadow-2xl transition-all duration-300 transform z-50 ${
+    className={`fixed top-6 right-6 px-4 py-3 md:px-6 md:py-4 rounded-xl text-white font-medium shadow-2xl transition-all duration-300 transform z-50 ${
       isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95 pointer-events-none"
     } ${bgColor}`}
   >
     <div className="flex items-center gap-3">
       {type === "success" ? <CheckCircle size={20} /> : type === 'info' ? <Info size={20} /> : <XCircle size={20} />}
-      <span className="font-medium">{message}</span>
+      <span className="font-medium text-sm md:text-base">{message}</span>
     </div>
   </div>
   )
@@ -3141,10 +3141,10 @@ export default function App() {
   const renderHeader = () => {
     if (!currentUser) return null
     return (
-      <header className="mb-8 p-8 bg-white rounded-2xl border border-gray-100 shadow-sm">
-        <div className="flex justify-between items-center">
+      <header className="mb-8 p-4 md:p-8 bg-white rounded-2xl border border-gray-100 shadow-sm">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
           <div>
-            <h2 className="text-3xl font-black text-gray-900">Панель управления</h2>
+            <h2 className="text-2xl md:text-3xl font-black text-gray-900">Панель управления</h2>
             <p className="text-gray-600 mt-2 font-medium">
               {currentUser.name} •{" "}
               {currentUser.role === "admin"
@@ -3190,10 +3190,10 @@ export default function App() {
 
     return (
       <Modal isVisible={true} onClose={onClose} size="full">
-        <div className="p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
+        <div className="p-4 md:p-8 border-b border-gray-200 bg-gradient-to-r from-green-50 to-emerald-50">
           <div className="flex flex-wrap justify-between items-center gap-4">
-            <h3 className="font-bold text-2xl text-gray-900 flex items-center gap-3">
-              <Calendar className="w-8 h-8 text-green-600" />
+            <h3 className="font-bold text-xl md:text-2xl text-gray-900 flex items-center gap-3">
+              <Calendar className="w-6 h-6 md:w-8 md:h-8 text-green-600" />
               График преподавателей
             </h3>
             <input
@@ -3210,18 +3210,18 @@ export default function App() {
             </button>
           </div>
         </div>
-        <div className="flex-1 overflow-auto p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
               <thead>
                 <tr>
-                  <th className="sticky left-0 bg-white p-4 border-b-2 border-gray-200 font-bold text-gray-900 text-left min-w-[100px] z-10">
+                  <th className="sticky top-0 left-0 bg-white p-4 border-b-2 border-gray-200 font-bold text-gray-900 text-left min-w-[100px] z-10">
                     Время
                   </th>
                   {props.teacherSchedule.teachers.map((teacher) => (
                     <th
                       key={teacher}
-                      className="p-4 border-b-2 border-gray-200 font-bold text-gray-900 min-w-[140px] text-center"
+                      className="sticky top-0 bg-white p-4 border-b-2 border-gray-200 font-bold text-gray-900 min-w-[140px] text-center"
                     >
                       {teacher}
                     </th>
@@ -3294,7 +3294,7 @@ export default function App() {
         )
       case "rating":
         return (
-          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-8">
+          <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white p-4 md:p-8">
             <AdminPage
               readOnly={true}
               tabs={dashboardTabs.filter((t) => !t.adminOnly)}
@@ -3375,7 +3375,7 @@ export default function App() {
 
         return (
           <div className="min-h-screen bg-gradient-to-br from-gray-50 to-white">
-            <div className="container mx-auto p-6 sm:p-8 lg:p-12">
+            <div className="container mx-auto p-4 sm:p-6 lg:p-8">
               {renderHeader()}
               {dashboardContent}
             </div>
