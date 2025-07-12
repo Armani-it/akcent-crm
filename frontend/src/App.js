@@ -86,6 +86,9 @@ const demoUsers = [
   { id: "26", username: "korlan", password: "password123", role: "teacher", name: "Қорлан" },
   { id: "27", username: "uki", password: "password123", role: "teacher", name: "Үкі" },
   { id: "29", username: "laura", password: "password123", role: "teacher", name: "Лаура" },
+  { id: "31", username: "sultan", password: "password123", role: "teacher", name: "Султан" },
+  { id: "32", username: "zhansaya", password: "password123", role: "teacher", name: "Жансая" },
+  { id: "33", username: "balnur", password: "password123", role: "teacher", name: "Балнұр" },
 ]
 
 const ALL_SOURCES = [
@@ -3124,7 +3127,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при изменении блокировки:", error);
         showToastMessage("Не удалось изменить статус слота", "error");
-        setBlockedSlots(originalSlots);
+        setEntries(originalEntries);
     }
   };
 
