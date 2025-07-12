@@ -28,6 +28,7 @@ import {
   Lock,
   Unlock,
   Info,
+  Search,
 } from "lucide-react"
 
 import {
@@ -950,6 +951,7 @@ const DistributionView = ({
   const [dragOverCell, setDragOverCell] = useState(null)
   const [selectedEntryForMobile, setSelectedEntryForMobile] = useState(null);
   const [cellToBlock, setCellToBlock] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const isMobile = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -1059,22 +1061,31 @@ const DistributionView = ({
 
   const today = new Date().toISOString().split("T")[0]
 
+  const filteredBaseEntries = useMemo(() => {
+    if (!searchQuery) return entries;
+    const lowercasedQuery = searchQuery.toLowerCase();
+    return entries.filter(entry => 
+      entry.clientName.toLowerCase().includes(lowercasedQuery) ||
+      (entry.phone && entry.phone.replace(/\D/g, '').includes(lowercasedQuery.replace(/\D/g, '')))
+    );
+  }, [entries, searchQuery]);
+
   const unassignedEntries = useMemo(() => {
-    return entries.filter((e) => {
+    return filteredBaseEntries.filter((e) => {
       const isUnassigned = !e.assignedTeacher;
-      const hasNoStatusOrPending = !e.status || e.status === "Ожидает"; // ИСПРАВЛЕНО: "Перенос" удален
+      const hasNoStatusOrPending = !e.status || e.status === "Ожидает";
       const isFutureOrToday = !e.trialDate || e.trialDate >= today;
       return isUnassigned && hasNoStatusOrPending && isFutureOrToday;
     });
-  }, [entries, today]);
+  }, [filteredBaseEntries, today]);
 
   const rescheduledEntries = useMemo(() => {
-    return entries.filter((e) => {
+    return filteredBaseEntries.filter((e) => {
       const isRescheduled = e.status === "Перенос"
       const isPastAndUnassigned = !e.assignedTeacher && e.trialDate && e.trialDate < today
       return isRescheduled || isPastAndUnassigned
     })
-  }, [entries, today])
+  }, [filteredBaseEntries, today])
 
   const assignedEntriesMap = useMemo(() => {
     const map = new Map()
@@ -1111,6 +1122,18 @@ const DistributionView = ({
         {!readOnly && (
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-24 space-y-6 max-h-[calc(100vh-7rem)] overflow-y-auto p-1 rounded-2xl">
+              <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Поиск по имени или телефону..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full p-3 pl-10 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                </div>
+              </div>
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
                   <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
