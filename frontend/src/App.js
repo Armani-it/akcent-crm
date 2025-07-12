@@ -29,6 +29,8 @@ import {
   Unlock,
   Info,
   Search,
+  Edit,
+  Trash2
 } from "lucide-react"
 
 import {
@@ -56,7 +58,7 @@ const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD
 // =================================================================
 //                            DEMO DATA & CONSTANTS
 // =================================================================
-const demoUsers = [
+const initialUsers = [
   { id: "1", username: "admin", password: "Akcent2026", role: "admin", name: "Admin" },
   { id: "2", username: "fariza", password: "password123", role: "rop", name: "Фариза" },
   { id: "3", username: "ayana", password: "password123", role: "rop", name: "Аяна" },
@@ -2828,6 +2830,8 @@ const AdminPage = ({
         return <ConversionView {...props} teacherSchedule={props.teacherSchedule} />
       case "analytics":
         return <AnalyticsView {...props} />
+      case "users":
+        return <UserManagementView {...props} />
       case "distribution":
       default:
         return (
@@ -2885,6 +2889,142 @@ const AdminPage = ({
   )
 }
 
+const UserManagementView = ({ users, onSaveUser, onDeleteUser }) => {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentUserToEdit, setCurrentUserToEdit] = useState(null);
+
+  const handleAddNew = () => {
+    setCurrentUserToEdit(null);
+    setIsModalOpen(true);
+  };
+
+  const handleEdit = (user) => {
+    setCurrentUserToEdit(user);
+    setIsModalOpen(true);
+  };
+
+  const handleSave = (userData) => {
+    onSaveUser(userData);
+    setIsModalOpen(false);
+  };
+
+  const handleDelete = (userId) => {
+    if (window.confirm("Вы уверены, что хотите удалить этого пользователя?")) {
+      onDeleteUser(userId);
+    }
+  };
+
+  return (
+    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">Управление пользователями</h2>
+        <button
+          onClick={handleAddNew}
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+        >
+          <Plus size={18} />
+          Добавить пользователя
+        </button>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left">
+          <thead>
+            <tr className="bg-gray-50">
+              <th className="p-4 font-bold text-gray-600">Имя</th>
+              <th className="p-4 font-bold text-gray-600">Логин</th>
+              <th className="p-4 font-bold text-gray-600">Роль</th>
+              <th className="p-4 font-bold text-gray-600 text-right">Действия</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {users.map(user => (
+              <tr key={user.id}>
+                <td className="p-4 font-medium text-gray-900">{user.name}</td>
+                <td className="p-4 text-gray-600">{user.username}</td>
+                <td className="p-4 text-gray-600">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${user.role === 'admin' ? 'bg-red-100 text-red-700' : user.role === 'rop' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}`}>
+                    {user.role}
+                  </span>
+                </td>
+                <td className="p-4 flex justify-end gap-2">
+                  <button onClick={() => handleEdit(user)} className="p-2 text-gray-500 hover:text-blue-600 hover:bg-gray-100 rounded-lg transition-colors"><Edit size={18} /></button>
+                  <button onClick={() => handleDelete(user.id)} className="p-2 text-gray-500 hover:text-red-600 hover:bg-gray-100 rounded-lg transition-colors"><Trash2 size={18} /></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {isModalOpen && (
+        <UserModal
+          user={currentUserToEdit}
+          onClose={() => setIsModalOpen(false)}
+          onSave={handleSave}
+        />
+      )}
+    </div>
+  );
+};
+
+const UserModal = ({ user, onClose, onSave }) => {
+  const [formData, setFormData] = useState({
+    id: user?.id || null,
+    name: user?.name || '',
+    username: user?.username || '',
+    password: '',
+    role: user?.role || 'teacher',
+  });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.username || (!formData.id && !formData.password)) {
+      alert("Пожалуйста, заполните все обязательные поля.");
+      return;
+    }
+    onSave(formData);
+  };
+
+  return (
+    <Modal isVisible={true} onClose={onClose} size="md">
+      <div className="p-8">
+        <h3 className="text-2xl font-bold mb-6">{user ? "Редактировать пользователя" : "Добавить пользователя"}</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Имя</label>
+            <input name="name" value={formData.name} onChange={handleChange} className="w-full p-3 border-2 border-gray-200 rounded-xl" required />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Логин</label>
+            <input name="username" value={formData.username} onChange={handleChange} className="w-full p-3 border-2 border-gray-200 rounded-xl" required />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Пароль</label>
+            <input type="password" name="password" value={formData.password} onChange={handleChange} className="w-full p-3 border-2 border-gray-200 rounded-xl" placeholder={user ? "Оставьте пустым, чтобы не менять" : ""} required={!user} />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Роль</label>
+            <select name="role" value={formData.role} onChange={handleChange} className="w-full p-3 border-2 border-gray-200 rounded-xl">
+              <option value="teacher">Учитель</option>
+              <option value="rop">РОП</option>
+              <option value="admin">Администратор</option>
+            </select>
+          </div>
+          <div className="flex justify-end gap-4 pt-4">
+            <button type="button" onClick={onClose} className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold">Отмена</button>
+            <button type="submit" className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold">Сохранить</button>
+          </div>
+        </form>
+      </div>
+    </Modal>
+  );
+};
+
+
 // =================================================================
 //                           MAIN APP COMPONENT
 // =================================================================
@@ -2898,10 +3038,15 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
   const [entries, setEntries] = useState([]);
   const [blockedSlots, setBlockedSlots] = useState([])
+  const [users, setUsers] = useState(initialUsers);
 
-  const ropList = useMemo(() => demoUsers.filter((u) => u.role === "rop"), [])
-  const teacherList = useMemo(() => demoUsers.filter((u) => u.role === "teacher").map((t) => t.name), [])
-  const [teacherSchedule] = useState({ teachers: teacherList, timeSlots: generateTimeSlots() })
+  const ropList = useMemo(() => users.filter((u) => u.role === "rop"), [users])
+  const teacherList = useMemo(() => users.filter((u) => u.role === "teacher").map((t) => t.name), [users])
+  const [teacherSchedule, setTeacherSchedule] = useState({ teachers: teacherList, timeSlots: generateTimeSlots() })
+  
+  useEffect(() => {
+    setTeacherSchedule({ teachers: teacherList, timeSlots: generateTimeSlots() })
+  }, [teacherList]);
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "" })
   const [showLoginModal, setShowLoginModal] = useState(false)
@@ -2973,7 +3118,7 @@ export default function App() {
 
 
   const handleLogin = (username, password) => {
-    const user = demoUsers.find((u) => u.username === username && u.password === password)
+    const user = users.find((u) => u.username === username && u.password === password)
     if (user) {
       const userToStore = { name: user.name, role: user.role };
       localStorage.setItem('currentUser', JSON.stringify(userToStore));
@@ -3027,15 +3172,13 @@ export default function App() {
   }
 
   const handleUpdateEntry = async (entryId, dataToUpdate) => {
-    // Оптимистичное обновление UI
-    const originalEntries = entries;
+    const originalEntries = [...entries];
     const updatedEntries = entries.map(entry =>
         entry.id === entryId ? { ...entry, ...dataToUpdate } : entry
     );
     setEntries(updatedEntries);
 
     try {
-        // 1. Обновляем данные в основной базе данных
         const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
             method: 'PUT',
             headers: {
@@ -3049,11 +3192,10 @@ export default function App() {
         }
         showToastMessage("Данные успешно обновлены!", "success");
 
-        // 2. Обновляем статус в Google Sheets
         const sheetUpdateData = {
           action: 'update',
-          phone: dataToUpdate.phone, // Используем телефон как уникальный ключ
-          status: dataToUpdate.status // Отправляем новый статус
+          phone: dataToUpdate.phone,
+          status: dataToUpdate.status
         };
 
         fetch(GOOGLE_SCRIPT_URL, {
@@ -3077,12 +3219,11 @@ export default function App() {
     const creationDate = new Date();
     const newEntryData = {
         ...data,
-        createdAt: creationDate.toISOString(), // Отправляем в ISO формате
+        createdAt: creationDate.toISOString(),
         status: "Ожидает",
     };
 
     try {
-        // Отправка данных на бэкенд
         const response = await fetch(`${API_URL}/api/entries`, {
             method: 'POST',
             headers: {
@@ -3097,12 +3238,10 @@ export default function App() {
 
         const savedEntry = await response.json();
         
-        // Добавляем новую запись в начало списка для немедленного отображения
         setEntries(prev => [{ ...savedEntry, createdAt: new Date(savedEntry.createdAt) }, ...prev]);
 
         showToastMessage("Заявка успешно сохранена на сервере!", "success");
 
-        // Отправка в Google Sheets
         const sheetData = { ...newEntryData, createdAt: creationDate.toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' }) };
 
         fetch(GOOGLE_SCRIPT_URL, {
@@ -3121,8 +3260,7 @@ export default function App() {
     const docId = `${date}_${teacher}_${time}`;
     const isBlocked = blockedSlots.some(slot => slot.id === docId);
     
-    // Оптимистичное обновление
-    const originalSlots = blockedSlots;
+    const originalSlots = [...blockedSlots];
     if (isBlocked) {
         setBlockedSlots(prev => prev.filter(slot => slot.id !== docId));
     } else {
@@ -3131,14 +3269,12 @@ export default function App() {
 
     try {
         if (isBlocked) {
-            // Удаляем блокировку
             const response = await fetch(`${API_URL}/api/blocked-slots/${docId}`, {
                 method: 'DELETE',
             });
             if (!response.ok) throw new Error("Ошибка при разблокировке");
             showToastMessage("Слот разблокирован", "success");
         } else {
-            // Добавляем блокировку
             const response = await fetch(`${API_URL}/api/blocked-slots`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -3153,6 +3289,24 @@ export default function App() {
         setBlockedSlots(originalSlots);
     }
   };
+  
+  const handleSaveUser = (userData) => {
+    if (userData.id) {
+      // Edit existing user
+      setUsers(users.map(u => u.id === userData.id ? {...u, ...userData, password: userData.password || u.password} : u));
+      showToastMessage("Пользователь обновлен!", "success");
+    } else {
+      // Add new user
+      const newUser = { ...userData, id: Date.now().toString() };
+      setUsers([...users, newUser]);
+      showToastMessage("Пользователь добавлен!", "success");
+    }
+  };
+
+  const handleDeleteUser = (userId) => {
+    setUsers(users.filter(u => u.id !== userId));
+    showToastMessage("Пользователь удален!", "success");
+  };
 
   const dashboardTabs = [
     { id: "distribution", label: "Распределение", adminOnly: true },
@@ -3160,6 +3314,7 @@ export default function App() {
     { id: "leaderboard", label: "Рейтинг", adminOnly: false },
     { id: "conversion", label: "Конверсия", adminOnly: true },
     { id: "analytics", label: "Аналитика", adminOnly: true },
+    { id: "users", label: "Пользователи", adminOnly: true },
   ]
 
   const publicUser = { name: "Guest", role: "public" }
@@ -3373,6 +3528,9 @@ export default function App() {
           onSavePlans: handleSavePlans,
           currentUser,
           onUpdateEntry: handleUpdateEntry,
+          users,
+          onSaveUser: handleSaveUser,
+          onDeleteUser: handleDeleteUser,
         }
 
         const dashboardContent = (() => {
