@@ -3476,22 +3476,22 @@ export default function App() {
     const assignedEntriesMap = useMemo(() => {
       const map = new Map()
       props.entries.forEach((e) => {
-        if (e.assignedTeacher && e.assignedTime && e.trialDate === localDate) {
-          map.set(`${e.assignedTeacher}-${e.assignedTime}`, e)
+        if (e.assignedTeacher && e.assignedTime && e.trialDate) { // Ensure trialDate exists
+          map.set(`${e.assignedTeacher}-${e.trialDate}-${e.assignedTime}`, e)
         }
       })
       return map
-    }, [props.entries, localDate])
+    }, [props.entries]) // Depend only on entries, localDate is not needed here
 
     const blockedSlotsMap = useMemo(() => {
       const map = new Map()
       props.blockedSlots.forEach((slot) => {
-        if (slot.date === localDate) {
-          map.set(`${slot.teacher}_${slot.time}`, true)
+        if (slot.teacher && slot.date && slot.time) { // Ensure all parts exist
+          map.set(`${slot.teacher}_${slot.date}_${slot.time}`, true)
         }
       })
       return map
-    }, [props.blockedSlots, localDate])
+    }, [props.blockedSlots]) // Depend only on blockedSlots, localDate is not needed here
 
     return (
       <Modal isVisible={true} onClose={onClose} size="full">
@@ -3534,53 +3534,47 @@ export default function App() {
                 </tr>
               </thead>
               <tbody>
-                {props.teacherSchedule.timeSlots.map((time) => {
-                  const entry = assignedEntriesMap.get(`${teacher}-${time}`)
-                  const isBlocked = blockedSlotsMap.has(`${teacher}_${time}`)
-                  return (
-                    <tr key={time} className="hover:bg-gray-50 transition-colors">
-                      <td className="sticky left-0 bg-white p-4 border-b border-gray-100 font-bold text-sm text-gray-700 z-10">
-                        {time}
-                      </td>
-                      <td
-                        className={`p-3 border-b border-gray-100 h-20 cursor-pointer`}
-                        onClick={() => !entry && props.onToggleBlockSlot(localDate, teacher, time)}
-                      >
-                        {entry ? (
+                {props.teacherSchedule.timeSlots.map((time) => (
+                  <tr key={time} className="hover:bg-gray-50 transition-colors">
+                    <td className="sticky left-0 bg-white p-4 border-b border-gray-100 font-bold text-sm text-gray-700 z-10">
+                      {time}
+                    </td>
+                    {props.teacherSchedule.teachers.map((teacher) => {
+                      // Correctly access entries and blocked slots using the full key
+                      const entry = assignedEntriesMap.get(`${teacher}-${localDate}-${time}`);
+                      const isBlocked = blockedSlotsMap.has(`${teacher}_${localDate}_${time}`);
+                      return (
+                        <td key={`${teacher}-${time}`} className="p-2 border-b border-gray-100 h-20 text-center">
                           <div
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              props.onOpenDetails(entry, true)
-                            }}
-                            className={`rounded-2xl p-4 transition-all hover:scale-[1.02] shadow-lg transform ${getAppointmentColorForStatus(entry.status)}`}
+                            onClick={() => !entry && props.onToggleBlockSlot(localDate, teacher, time)}
+                            className={`h-full w-full rounded-xl border flex flex-col items-center justify-center p-1 text-xs font-semibold transition-all ${
+                              entry ? `${getAppointmentColorForStatus(entry.status)} cursor-pointer` : 
+                              isBlocked ? "bg-gray-200 border-gray-200" : "bg-green-50 border-green-200"
+                            }`}
                           >
-                            <div className="flex justify-between items-center">
-                              <div>
-                                <p className="font-bold truncate text-lg">{entry.clientName}</p>
-                                <p className="text-sm opacity-90 truncate">{entry.status}</p>
+                            {entry ? (
+                              <div
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  props.onOpenDetails(entry, true)
+                                }}
+                                className={`h-full w-full flex flex-col items-center justify-center text-white rounded-lg p-2 text-xs font-semibold cursor-pointer transition-all hover:scale-105 shadow-lg transform ${getAppointmentColorForStatus(entry.status)}`}
+                              >
+                                <span className="font-bold truncate">{entry.clientName}</span>
+                                <span className="opacity-80 truncate">{entry.status}</span>
                                 {entry.paymentAmount > 0 && <span className="opacity-80 truncate">{entry.paymentAmount.toLocaleString("ru-RU")} ₸</span>}
                               </div>
-                              <div className="text-right">
-                                <p className="text-sm opacity-90 font-semibold">{entry.rop}</p>
-                                {entry.comment && (
-                                  <p className="text-xs opacity-75 truncate max-w-[150px]">{entry.comment}</p>
-                                )}
-                              </div>
-                            </div>
+                            ) : isBlocked ? (
+                              <Lock className="w-5 h-5 text-gray-400" />
+                            ) : (
+                              <Check className="w-5 h-5 text-green-400" />
+                            )}
                           </div>
-                        ) : isBlocked ? (
-                          <div className="h-full bg-gray-200 rounded-2xl flex items-center justify-center text-gray-500 font-semibold">
-                            <Lock className="w-5 h-5 mr-2" /> Заблокировано
-                          </div>
-                        ) : (
-                          <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200 flex items-center justify-center text-blue-400 hover:border-blue-400 hover:bg-blue-100 font-semibold">
-                            <Check className="w-5 h-5 mr-2" /> Свободно
-                          </div>
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
