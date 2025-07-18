@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import {
   X,
   Calendar,
@@ -20,7 +20,7 @@ import {
   User as UserIcon,
   Filter,
   DollarSign,
-  PieChart,
+  PieChart as PieChartIcon,
   Check,
   XCircle,
   History,
@@ -30,8 +30,10 @@ import {
   Info,
   Search,
   Edit,
-  Trash2
-} from "lucide-react"
+  Trash2,
+  Send,
+  Loader
+} from "lucide-react";
 
 import {
   ComposedChart,
@@ -47,18 +49,24 @@ import {
   Legend,
   ResponsiveContainer,
   LabelList,
-} from "recharts"
+  PieChart,
+  Pie,
+  Cell
+} from "recharts";
 
 // =================================================================
-//                            CONFIGURATION
+//                      CONFIGURATION
 // =================================================================
-const API_URL = "https://akcent-crm-backend.onrender.com"; // URL вашего рабочего бэкенда
+const API_URL = "https://akcent-crm-backend.onrender.com";
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD328JACl0H7DcbKVByoQKRXr4GfMdYaks_HU6isXojfNJ55E6XjbLDl/exec";
+const WEBHOOK_URL = "https://akcent.online/webhook";
+const RESCHEDULE_WEBHOOK_URL = "https://akcent.online/reschedule-webhook";
 
 // =================================================================
-//                            DEMO DATA & CONSTANTS
+//                      DEMO DATA & CONSTANTS
 // =================================================================
 const initialUsers = [
+  // Администраторы и РОПы
   { id: "1", username: "admin", password: "Akcent2026", role: "admin", name: "Admin" },
   { id: "2", username: "fariza", password: "password123", role: "rop", name: "Фариза" },
   { id: "3", username: "ayana", password: "password123", role: "rop", name: "Аяна" },
@@ -70,6 +78,8 @@ const initialUsers = [
   { id: "9", username: "beksultan", password: "password123", role: "rop", name: "Бексұлтан" },
   { id: "28", username: "nurtileu", password: "password123", role: "rop", name: "Нұртілеу" },
   { id: "30", username: "kadir", password: "password123", role: "rop", name: "Қадір" },
+
+  // Обновленный список учителей
   { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем" },
   { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым" },
   { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла" },
@@ -92,7 +102,7 @@ const initialUsers = [
   { id: "31", username: "sultan", password: "password123", role: "teacher", name: "Султан" },
   { id: "32", username: "zhansaya", password: "password123", role: "teacher", name: "Жансая" },
   { id: "33", username: "balnur", password: "password123", role: "teacher", name: "Балнұр" },
-]
+];
 
 const ALL_SOURCES = [
   "Facebook Tilda-Сайт",
@@ -105,73 +115,59 @@ const ALL_SOURCES = [
   "Блогер",
   "База-лид",
   "Деңгей анықтау",
-]
+];
 
 const generateTimeSlots = () => {
-  const slots = []
-  let hour = 9
-  let minute = 0
-  while (hour < 24) {
-    const timeString = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-    slots.push(timeString)
-    minute += 40
-    if (minute >= 60) {
-      hour += 1
-      minute -= 60
-    }
+  const slots = [];
+  for (let hour = 9; hour < 22; hour++) {
+      slots.push(`${hour.toString().padStart(2, "0")}:00`);
   }
-  return slots
-}
+  return slots;
+};
 
 // =================================================================
-//                           HELPER FUNCTIONS
+//                      HELPER FUNCTIONS
 // =================================================================
 
 const formatPhoneNumber = (phoneStr) => {
   if (!phoneStr) return "";
   let cleaned = ('' + phoneStr).replace(/\D/g, '');
-  
-  if (cleaned.length === 11 && cleaned.startsWith('8')) {
-    cleaned = '7' + cleaned.slice(1);
-  }
-
-  if (cleaned.length === 10 && !cleaned.startsWith('7')) {
-      cleaned = '7' + cleaned;
-  }
-
+  if (cleaned.length === 11 && cleaned.startsWith('8')) cleaned = '7' + cleaned.slice(1);
+  if (cleaned.length === 10 && !cleaned.startsWith('7')) cleaned = '7' + cleaned;
   const match = cleaned.match(/^7(\d{3})(\d{3})(\d{2})(\d{2})$/);
-  if (match) {
-    return `+7 (${match[1]}) ${match[2]}-${match[3]}-${match[4]}`;
-  }
-  
-  return phoneStr;
+  return match ? `+7 (${match[1]}) ${match[2]}-${match[3]}-${match[4]}` : phoneStr;
+};
+
+// Новая функция для очистки номера для API
+const cleanPhoneNumberForApi = (phoneStr) => {
+    if (!phoneStr) return "";
+    let cleaned = ('' + phoneStr).replace(/\D/g, '');
+    if (cleaned.length === 11 && cleaned.startsWith('8')) {
+        return '7' + cleaned.slice(1);
+    }
+    if (cleaned.startsWith('7') && cleaned.length === 11) {
+        return cleaned;
+    }
+    if (cleaned.length === 10) {
+        return '7' + cleaned;
+    }
+    return phoneStr; // Возвращаем как есть, если формат неизвестен
 };
 
 
-const getRankColor = (index) => {
-  const colors = ["from-yellow-400 to-yellow-600", "from-gray-400 to-gray-600", "from-orange-400 to-orange-600"]
-  return colors[index] || "from-blue-400 to-blue-600"
-}
-
-const getRankIcon = (index) => {
-  const icons = ["👑", "🥈", "🥉"]
-  return icons[index] || index + 1
-}
+const getRankColor = (index) => ["from-yellow-400 to-yellow-600", "from-gray-400 to-gray-600", "from-orange-400 to-orange-600"][index] || "from-blue-400 to-blue-600";
+const getRankIcon = (index) => ["👑", "🥈", "🥉"][index] || index + 1;
 
 const getAppointmentColorForStatus = (status) => {
     switch (status) {
-      case "Оплата":
-        return "bg-gradient-to-r from-green-500 to-green-600 text-white"
-      case "Клиент отказ":
-      case "Каспий отказ":
-        return "bg-gradient-to-r from-red-500 to-red-600 text-white"
-      default:
-        return "bg-gradient-to-r from-blue-500 to-blue-600 text-white"
+      case "Оплата": return "bg-gradient-to-r from-green-500 to-green-600 text-white";
+      case "Клиент отказ": case "Каспий отказ": return "bg-gradient-to-r from-red-500 to-red-600 text-white";
+      default: return "bg-gradient-to-r from-blue-500 to-blue-600 text-white";
     }
 }
 
 // =================================================================
-//                           COMMON COMPONENTS
+//                      COMMON COMPONENTS
 // =================================================================
 
 const Spinner = () => (
@@ -179,60 +175,112 @@ const Spinner = () => (
     <div className="w-8 h-8 border-2 border-gray-200 border-t-blue-500 rounded-full animate-spin"></div>
     <span className="text-sm">Загрузка...</span>
   </div>
-)
+);
 
 const Toast = ({ message, type, isVisible }) => {
-  let bgColor = 'bg-gradient-to-r from-red-500 to-red-600'; // default to error
-  if (type === 'success') {
-    bgColor = 'bg-gradient-to-r from-green-500 to-green-600';
-  } else if (type === 'info') {
-    bgColor = 'bg-gradient-to-r from-blue-500 to-blue-600';
-  }
+  let bgColor = 'bg-gradient-to-r from-red-500 to-red-600';
+  if (type === 'success') bgColor = 'bg-gradient-to-r from-green-500 to-green-600';
+  else if (type === 'info') bgColor = 'bg-gradient-to-r from-blue-500 to-blue-600';
 
   return (
-  <div
-    className={`fixed top-6 right-6 px-4 py-3 md:px-6 md:py-4 rounded-xl text-white font-medium shadow-2xl transition-all duration-300 transform z-50 ${
-      isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95 pointer-events-none"
-    } ${bgColor}`}
-  >
-    <div className="flex items-center gap-3">
-      {type === "success" ? <CheckCircle size={20} /> : type === 'info' ? <Info size={20} /> : <XCircle size={20} />}
-      <span className="font-medium text-sm md:text-base">{message}</span>
+    <div className={`fixed top-6 right-6 px-4 py-3 md:px-6 md:py-4 rounded-xl text-white font-medium shadow-2xl transition-all duration-300 transform z-50 ${isVisible ? "opacity-100 translate-y-0 scale-100" : "opacity-0 -translate-y-4 scale-95 pointer-events-none"} ${bgColor}`}>
+      <div className="flex items-center gap-3">
+        {type === "success" ? <CheckCircle size={20} /> : type === 'info' ? <Info size={20} /> : <XCircle size={20} />}
+        <span className="font-medium text-sm md:text-base">{message}</span>
+      </div>
     </div>
-  </div>
-  )
-}
+  );
+};
 
 const Modal = ({ isVisible, onClose, children, size = "lg" }) => {
-  if (!isVisible) return null
-  const sizeClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-lg",
-    xl: "max-w-xl",
-    "2xl": "max-w-2xl",
-    "4xl": "max-w-4xl",
-    "6xl": "max-w-6xl",
-    full: "max-w-full m-4",
-  }
+  if (!isVisible) return null;
+  const sizeClasses = { sm: "max-w-sm", md: "max-w-md", lg: "max-w-lg", xl: "max-w-xl", "2xl": "max-w-2xl", "4xl": "max-w-4xl", "6xl": "max-w-6xl", full: "max-w-full m-4" };
   return (
-    <div
-      className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4"
-      onClick={onClose}
-    >
-      <div
-        className={`bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col border border-gray-100`}
-        onClick={(e) => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex justify-center items-center z-50 p-4" onClick={onClose}>
+      <div className={`bg-white rounded-2xl shadow-2xl w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col border border-gray-100`} onClick={(e) => e.stopPropagation()}>
         {children}
       </div>
     </div>
-  )
-}
+  );
+};
 
 // =================================================================
-//                           FEATURE COMPONENTS
+//                      FEATURE COMPONENTS
 // =================================================================
+
+const TeacherNotificationSender = () => {
+  const [teacherName, setTeacherName] = useState('');
+  const [studentPhone, setStudentPhone] = useState('');
+  const [lessonTime, setLessonTime] = useState('');
+  const [status, setStatus] = useState({ sending: false, message: '', isError: false });
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ sending: true, message: '', isError: false });
+
+    const dataToSend = { 
+        teacherName, 
+        phone: cleanPhoneNumberForApi(studentPhone), 
+        lessonTime 
+    };
+    const options = {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dataToSend)
+    };
+
+    try {
+      const response = await fetch(WEBHOOK_URL, options);
+      if (response.ok) {
+        const responseText = await response.text();
+        setStatus({ sending: false, message: `Уведомление успешно отправлено! Ответ сервера: ${responseText}`, isError: false });
+        setTeacherName('');
+        setStudentPhone('');
+        setLessonTime('');
+      } else {
+        const errorText = await response.text();
+        throw new Error(`Ошибка сервера: ${response.status} ${response.statusText}. ${errorText}`);
+      }
+    } catch (error) {
+      console.error("Критическая ошибка при отправке:", error);
+      setStatus({ sending: false, message: `Ошибка сети: ${error.message}`, isError: true });
+    }
+  };
+
+  return (
+    <div className="w-full max-w-2xl mx-auto bg-white rounded-2xl shadow-xl p-8 space-y-6">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold text-gray-800">Отправить уведомление учителю</h1>
+        <p className="text-gray-500 mt-2">Заполните данные для отправки через вебхук.</p>
+      </div>
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div>
+          <label htmlFor="teacherName" className="block text-sm font-medium text-gray-700 mb-2">Имя учителя</label>
+          <input id="teacherName" type="text" value={teacherName} onChange={(e) => setTeacherName(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition" placeholder="например, Асем" required />
+        </div>
+        <div>
+          <label htmlFor="studentPhone" className="block text-sm font-medium text-gray-700 mb-2">Телефон ученика</label>
+          <input id="studentPhone" type="tel" value={studentPhone} onChange={(e) => setStudentPhone(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition" placeholder="например, 77071234567" required />
+        </div>
+        <div>
+          <label htmlFor="lessonTime" className="block text-sm font-medium text-gray-700 mb-2">Время урока</label>
+          <input id="lessonTime" type="time" value={lessonTime} onChange={(e) => setLessonTime(e.target.value)} className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 transition" required />
+        </div>
+        <div>
+          <button type="submit" disabled={status.sending} className="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 disabled:bg-blue-400 transition-all duration-300">
+            {status.sending ? (<><Loader className="animate-spin mr-2" size={20} />Отправка...</>) : (<><Send className="mr-2" size={20} />Отправить</>)}
+          </button>
+        </div>
+      </form>
+      {status.message && (
+        <div className={`p-4 rounded-lg flex items-center text-sm font-medium ${status.isError ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+          {status.isError ? <XCircle className="mr-3" /> : <CheckCircle className="mr-3" />}
+          {status.message}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const PlanModal = ({ isVisible, onClose, ropList, plans, onSavePlans }) => {
   const [localPlans, setLocalPlans] = useState({})
@@ -686,7 +734,7 @@ const LoginModal = ({ isVisible, onClose, onLogin }) => {
 }
 
 // =================================================================
-//                           VIEW COMPONENTS
+//                      VIEW COMPONENTS
 // =================================================================
 
 const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminLogin, onShowSchedule }) => {
@@ -703,20 +751,16 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
       return;
     }
 
-    // Handle Kazakhstan/Russia country codes (8 -> 7)
     if (digits.startsWith('8')) {
       digits = '7' + digits.slice(1);
     }
     
-    // Ensure the number starts with '7'
     if (!digits.startsWith('7')) {
       digits = '7' + digits;
     }
 
-    // Limit to 11 digits (7 + 10)
     digits = digits.slice(0, 11);
 
-    // Apply the formatting mask
     let formatted = `+${digits[0]}`;
     if (digits.length > 1) {
         formatted += ` (${digits.slice(1, 4)}`;
@@ -741,7 +785,7 @@ const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminL
 
     const formData = new FormData(e.target)
     const data = Object.fromEntries(formData.entries())
-    data.phone = phone; // Используем отформатированный номер из состояния
+    data.phone = phone;
 
     if (!data.rop) {
       showToast("Пожалуйста, выберите РОП", "error")
@@ -1003,8 +1047,8 @@ const DistributionView = ({
   
   const handleEntryClick = (entry) => {
     if (readOnly) {
-       onOpenDetails(entry, true);
-       return;
+        onOpenDetails(entry, true);
+        return;
     }
     if (isMobile) {
       if (selectedEntryForMobile?.id === entry.id) {
@@ -1676,25 +1720,25 @@ const LeaderboardView = ({ entries, ropList, currentUser, plans, onSavePlans }) 
   return (
     <div className="max-w-6xl mx-auto space-y-8">
        <div className={`flex items-center ${currentUser?.role === 'public' ? 'justify-center' : 'justify-end'}`}>
-         {currentUser?.role === 'public' && (
-           <div className="text-center">
-             <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-3xl mb-6 shadow-2xl">
-               <TrendingUp className="w-12 h-12 text-white" />
-             </div>
-             <h2 className="text-4xl font-black text-gray-900 mb-4">Команданың нәтижесі</h2>
-             <p className="text-gray-600 text-lg">Результаты работы по пробным урокам</p>
-           </div>
-         )}
-         {currentUser?.role === "admin" && (
-           <button
-             onClick={() => setShowPlanModal(true)}
-             className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all font-bold shadow-lg"
-           >
-             <Target className="w-5 h-5" />
-             Установить планы
-           </button>
-         )}
-       </div>
+        {currentUser?.role === 'public' && (
+          <div className="text-center">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-yellow-400 to-yellow-600 rounded-3xl mb-6 shadow-2xl">
+              <TrendingUp className="w-12 h-12 text-white" />
+            </div>
+            <h2 className="text-4xl font-black text-gray-900 mb-4">Команданың нәтижесі</h2>
+            <p className="text-gray-600 text-lg">Результаты работы по пробным урокам</p>
+          </div>
+        )}
+        {currentUser?.role === "admin" && (
+          <button
+            onClick={() => setShowPlanModal(true)}
+            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl hover:from-blue-600 hover:to-blue-700 transition-all font-bold shadow-lg"
+          >
+            <Target className="w-5 h-5" />
+            Установить планы
+          </button>
+        )}
+      </div>
 
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
           <h3 className="font-bold text-lg text-gray-900 mb-4">Фильтр по дате</h3>
@@ -2314,7 +2358,7 @@ const TeacherDashboard = (props) => {
 }
 
 // =================================================================
-//                 REFACTORED ANALYTICS COMPONENTS
+//                      REFACTORED ANALYTICS COMPONENTS
 // =================================================================
 
 const StatCard = ({ title, value, icon, gradient }) => (
@@ -2629,7 +2673,7 @@ const AnalyticsView = ({ entries, ropList }) => {
           .sort((a, b) => b.amount - a.amount),
         trialSourceStats: Object.entries(tempTrialSourceStats)
           .map(([name, count]) => ({ name, count }))
-          .sort((a, b) => b.count - a.count),
+          .sort((a, b) => b.count - a.count), // Corrected this line
         funnelStats: funnel,
         correlationData: correlation,
         reachabilityStats: reachability,
@@ -2787,7 +2831,7 @@ const AnalyticsView = ({ entries, ropList }) => {
         <StatCard
           title="Средний чек"
           value={`${averageCheck.toLocaleString("ru-RU", { maximumFractionDigits: 0 })} ₸`}
-          icon={<PieChart className="w-10 h-10 text-white" />}
+          icon={<PieChartIcon className="w-10 h-10 text-white" />}
           gradient="bg-gradient-to-r from-purple-500 to-purple-600"
         />
         <ReachabilityChart stats={reachabilityStats} />
@@ -2832,6 +2876,8 @@ const AdminPage = ({
         return <AnalyticsView {...props} />
       case "users":
         return <UserManagementView {...props} />
+      case "notifications": // Новая вкладка
+        return <TeacherNotificationSender />;
       case "distribution":
       default:
         return (
@@ -2909,7 +2955,9 @@ const UserManagementView = ({ users, onSaveUser, onDeleteUser }) => {
   };
 
   const handleDelete = (userId) => {
-    if (window.confirm("Вы уверены, что хотите удалить этого пользователя?")) {
+    // Replace with a custom modal in a real app
+    const isConfirmed = window.confirm("Вы уверены, что хотите удалить этого пользователя?");
+    if (isConfirmed) {
       onDeleteUser(userId);
     }
   };
@@ -2983,6 +3031,7 @@ const UserModal = ({ user, onClose, onSave }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!formData.name || !formData.username || (!formData.id && !formData.password)) {
+      // Replace with a custom modal/toast in a real app
       alert("Пожалуйста, заполните все обязательные поля.");
       return;
     }
@@ -3026,7 +3075,7 @@ const UserModal = ({ user, onClose, onSave }) => {
 
 
 // =================================================================
-//                           MAIN APP COMPONENT
+//                      MAIN APP COMPONENT
 // =================================================================
 
 export default function App() {
@@ -3088,7 +3137,7 @@ export default function App() {
     }
   }, [showToastMessage]);
 
-  // Эффект для первоначальной загрузки данных и восстановления сессии
+  // Effect for initial data loading and session restoration
   useEffect(() => {
     const loadInitialData = async () => {
         setIsLoading(true);
@@ -3104,15 +3153,15 @@ export default function App() {
     loadInitialData();
   }, [fetchEntries, fetchBlockedSlots]);
 
-  // Эффект для периодического обновления данных (polling)
+  // Effect for periodic data fetching (polling)
   useEffect(() => {
-    if (currentUser) { // Обновляем данные только если пользователь вошел в систему
+    if (currentUser) { // Only fetch if user is logged in
         const interval = setInterval(() => {
             fetchEntries();
             fetchBlockedSlots();
-        }, 15000); // каждые 15 секунд
+        }, 15000); // every 15 seconds
 
-        return () => clearInterval(interval); // Очистка при размонтировании
+        return () => clearInterval(interval); // Cleanup on unmount
     }
   }, [currentUser, fetchEntries, fetchBlockedSlots]);
 
@@ -3166,24 +3215,97 @@ export default function App() {
   }
 
   const handleSavePlans = async (newPlans) => {
-    // TODO: Добавить логику сохранения планов на бэкенд
     setPlans(newPlans)
     showToastMessage("Планы сохранены (локально)", "success")
   }
 
+  const handleWebhook = async (originalEntry, updatedEntry) => {
+    const wasAssigned = originalEntry.assignedTeacher && originalEntry.assignedTime;
+    const isNowAssigned = updatedEntry.assignedTeacher && updatedEntry.assignedTime;
+
+    const cleanedPhone = cleanPhoneNumberForApi(originalEntry.phone);
+
+    // Случай 1: Отмена или перенос назначенного урока
+    if (wasAssigned && (!isNowAssigned || ["Перенос", "Клиент отказ", "Каспий отказ"].includes(updatedEntry.status))) {
+        const lessonIdentifier = `${originalEntry.assignedTeacher}-${cleanedPhone}-${originalEntry.assignedTime}`;
+        const payload = {
+            lessonIdentifier,
+            action: "cancel",
+        };
+        try {
+            await fetch(RESCHEDULE_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            showToastMessage("Уведомление об отмене урока отправлено", "info");
+        } catch (e) {
+            console.error("Ошибка при отправке вебхука отмены:", e);
+            showToastMessage("Ошибка отправки вебхука отмены", "error");
+        }
+    }
+
+    // Случай 2: Назначение нового урока (ранее не был назначен)
+    if (!wasAssigned && isNowAssigned) {
+        const payload = {
+            teacherName: updatedEntry.assignedTeacher,
+            phone: cleanedPhone,
+            lessonTime: updatedEntry.assignedTime,
+        };
+        try {
+            await fetch(WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            showToastMessage("Уведомление о новом уроке отправлено", "info");
+        } catch (e) {
+            console.error("Ошибка при отправке вебхука назначения:", e);
+            showToastMessage("Ошибка отправки вебхука назначения", "error");
+        }
+    }
+
+    // Случай 3: Перенос назначенного урока на другое время/дату
+    if (wasAssigned && isNowAssigned && (originalEntry.assignedTime !== updatedEntry.assignedTime || originalEntry.trialDate !== updatedEntry.trialDate)) {
+        const lessonIdentifier = `${originalEntry.assignedTeacher}-${cleanedPhone}-${originalEntry.assignedTime}`;
+        const payload = {
+            lessonIdentifier,
+            action: "reschedule",
+            newLessonTime: updatedEntry.assignedTime,
+        };
+        try {
+            await fetch(RESCHEDULE_WEBHOOK_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            showToastMessage("Уведомление о переносе урока отправлено", "info");
+        } catch (e) {
+            console.error("Ошибка при отправке вебхука переноса:", e);
+            showToastMessage("Ошибка отправки вебхука переноса", "error");
+        }
+    }
+};
+
+
   const handleUpdateEntry = async (entryId, dataToUpdate) => {
-    const originalEntries = [...entries];
+    const originalEntry = entries.find(e => e.id === entryId);
+    if (!originalEntry) {
+        showToastMessage("Не удалось найти исходную запись для обновления.", "error");
+        return;
+    }
+    
+    // Оптимистичное обновление
     const updatedEntries = entries.map(entry =>
         entry.id === entryId ? { ...entry, ...dataToUpdate } : entry
     );
     setEntries(updatedEntries);
 
     try {
+        // 1. Обновляем основную базу данных
         const response = await fetch(`${API_URL}/api/entries/${entryId}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(dataToUpdate),
         });
 
@@ -3192,12 +3314,15 @@ export default function App() {
         }
         showToastMessage("Данные успешно обновлены!", "success");
 
+        // 2. Логика вебхуков
+        await handleWebhook(originalEntry, dataToUpdate);
+
+        // 3. Обновляем Google Sheets
         const sheetUpdateData = {
           action: 'update',
           phone: dataToUpdate.phone,
           status: dataToUpdate.status
         };
-
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
             mode: 'no-cors',
@@ -3207,7 +3332,7 @@ export default function App() {
     } catch (error) {
         console.error("Ошибка при обновлении заявки:", error);
         showToastMessage("Не удалось обновить данные на сервере", "error");
-        setEntries(originalEntries);
+        setEntries(entries); // Откат оптимистичного обновления
     }
   }
 
@@ -3254,7 +3379,7 @@ export default function App() {
         console.error("Ошибка при сохранении заявки:", error);
         showToastMessage("Не удалось сохранить заявку на сервере", "error");
     }
-};
+  };
 
   const handleToggleBlockSlot = async (date, teacher, time) => {
     const docId = `${date}_${teacher}_${time}`;
@@ -3292,11 +3417,9 @@ export default function App() {
   
   const handleSaveUser = (userData) => {
     if (userData.id) {
-      // Edit existing user
       setUsers(users.map(u => u.id === userData.id ? {...u, ...userData, password: userData.password || u.password} : u));
       showToastMessage("Пользователь обновлен!", "success");
     } else {
-      // Add new user
       const newUser = { ...userData, id: Date.now().toString() };
       setUsers([...users, newUser]);
       showToastMessage("Пользователь добавлен!", "success");
@@ -3315,6 +3438,7 @@ export default function App() {
     { id: "conversion", label: "Конверсия", adminOnly: true },
     { id: "analytics", label: "Аналитика", adminOnly: true },
     { id: "users", label: "Пользователи", adminOnly: true },
+    { id: "notifications", label: "Уведомления", adminOnly: true },
   ]
 
   const publicUser = { name: "Guest", role: "public" }
@@ -3540,7 +3664,7 @@ export default function App() {
                 <AdminPage {...commonProps} tabs={dashboardTabs} activeTab={adminTab} setActiveTab={setAdminTab} />
               )
             case "teacher":
-              return <TeacherDashboard {...commonProps} />
+              return <TeacherDashboard {...props} />
             case "rop":
               return (
                 <AdminPage
