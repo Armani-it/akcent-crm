@@ -55,7 +55,7 @@ import {
 } from "recharts";
 
 // =================================================================
-//                      CONFIGURATION
+//                     CONFIGURATION
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com";
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD328JACl0H7DcbKVByoQKRXr4GfMdYaks_HU6isXojfNJ55E6XjbLDl/exec";
@@ -63,7 +63,7 @@ const WEBHOOK_URL = "https://akcent.online/webhook";
 const RESCHEDULE_WEBHOOK_URL = "https://akcent.online/reschedule-webhook";
 
 // =================================================================
-//                      DEMO DATA & CONSTANTS
+//                     DEMO DATA & CONSTANTS
 // =================================================================
 const initialUsers = [
   // Администраторы и РОПы
@@ -126,7 +126,7 @@ const generateTimeSlots = () => {
 };
 
 // =================================================================
-//                      HELPER FUNCTIONS
+//                     HELPER FUNCTIONS
 // =================================================================
 
 const formatPhoneNumber = (phoneStr) => {
@@ -167,7 +167,7 @@ const getAppointmentColorForStatus = (status) => {
 }
 
 // =================================================================
-//                      COMMON COMPONENTS
+//                     COMMON COMPONENTS
 // =================================================================
 
 const Spinner = () => (
@@ -205,7 +205,7 @@ const Modal = ({ isVisible, onClose, children, size = "lg" }) => {
 };
 
 // =================================================================
-//                      FEATURE COMPONENTS
+//                     FEATURE COMPONENTS
 // =================================================================
 
 const TeacherNotificationSender = () => {
@@ -734,7 +734,7 @@ const LoginModal = ({ isVisible, onClose, onLogin }) => {
 }
 
 // =================================================================
-//                      VIEW COMPONENTS
+//                     VIEW COMPONENTS
 // =================================================================
 
 const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminLogin, onShowSchedule }) => {
@@ -1507,7 +1507,7 @@ const TrialsListView = ({ entries, ropList, onOpenDetails, readOnly = false, onF
               className="w-full p-3 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 font-medium"
             />
           </div>
-           <div>
+            <div>
             <label className="block text-xs font-bold text-gray-700 mb-2">Конец периода</label>
             <input
               type="date"
@@ -2358,7 +2358,7 @@ const TeacherDashboard = (props) => {
 }
 
 // =================================================================
-//                      REFACTORED ANALYTICS COMPONENTS
+//                     REFACTORED ANALYTICS COMPONENTS
 // =================================================================
 
 const StatCard = ({ title, value, icon, gradient }) => (
@@ -2469,7 +2469,7 @@ const TrialSourceChart = ({ title, data }) => (
                             tickFormatter={(value) => `${value}`}
                             style={{ fontSize: '12px', fill: '#6b7280' }}
                         />
-                        <Tooltip formatter={(value) => [`${value} пробных`, 'Количество']} />
+                        <Tooltip formatter={(value, name) => [`${value} пробных`, 'Количество']} />
                         <Bar yAxisId={0} dataKey="count" name="Пробные" fill="#8884d8" radius={[0, 4, 4, 0]} maxBarSize={25}>
                            <LabelList dataKey="name" position="insideLeft" style={{ fill: 'white', fontSize: '12px', fontWeight: 'bold' }} />
                         </Bar>
@@ -3075,7 +3075,7 @@ const UserModal = ({ user, onClose, onSave }) => {
 
 
 // =================================================================
-//                      MAIN APP COMPONENT
+//                     MAIN APP COMPONENT
 // =================================================================
 
 export default function App() {
@@ -3534,40 +3534,53 @@ export default function App() {
                 </tr>
               </thead>
               <tbody>
-                {props.teacherSchedule.timeSlots.map((time) => (
-                  <tr key={time} className="hover:bg-gray-50 transition-colors">
-                    <td className="sticky left-0 bg-white p-4 border-b border-gray-100 font-bold text-sm text-gray-700 z-10">
-                      {time}
-                    </td>
-                    {props.teacherSchedule.teachers.map((teacher) => {
-                      const entry = assignedEntriesMap.get(`${teacher}-${time}`)
-                      const isBlocked = blockedSlotsMap.has(`${teacher}_${time}`)
-                      return (
-                        <td key={`${teacher}-${time}`} className="p-2 border-b border-gray-100 h-20 text-center">
+                {props.teacherSchedule.timeSlots.map((time) => {
+                  const entry = assignedEntriesMap.get(`${teacher}-${time}`)
+                  const isBlocked = blockedSlotsMap.has(`${teacher}_${time}`)
+                  return (
+                    <tr key={time} className="hover:bg-gray-50 transition-colors">
+                      <td className="sticky left-0 bg-white p-4 border-b border-gray-100 font-bold text-sm text-gray-700 z-10">
+                        {time}
+                      </td>
+                      <td
+                        className={`p-3 border-b border-gray-100 h-20 cursor-pointer`}
+                        onClick={() => !entry && props.onToggleBlockSlot(localDate, teacher, time)}
+                      >
+                        {entry ? (
                           <div
-                            onClick={() => entry && props.onOpenDetails(entry, true)}
-                            className={`h-full w-full rounded-xl border flex flex-col items-center justify-center p-1 text-xs font-semibold transition-all ${
-                              entry ? `${getAppointmentColorForStatus(entry.status)} cursor-pointer` : 
-                              isBlocked ? "bg-gray-200 border-gray-200" : "bg-green-50 border-green-200"
-                            }`}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              props.onOpenDetails(entry, true)
+                            }}
+                            className={`rounded-2xl p-4 transition-all hover:scale-[1.02] shadow-lg transform ${getAppointmentColorForStatus(entry.status)}`}
                           >
-                            {entry ? (
-                              <>
-                                <span className="font-bold truncate">{entry.clientName}</span>
-                                <span className="opacity-80 truncate">{entry.status}</span>
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="font-bold truncate text-lg">{entry.clientName}</p>
+                                <p className="text-sm opacity-90 truncate">{entry.status}</p>
                                 {entry.paymentAmount > 0 && <span className="opacity-80 truncate">{entry.paymentAmount.toLocaleString("ru-RU")} ₸</span>}
-                              </>
-                            ) : isBlocked ? (
-                              <Lock className="w-5 h-5 text-gray-400" />
-                            ) : (
-                              <Check className="w-5 h-5 text-green-400" />
-                            )}
+                              </div>
+                              <div className="text-right">
+                                <p className="text-sm opacity-90 font-semibold">{entry.rop}</p>
+                                {entry.comment && (
+                                  <p className="text-xs opacity-75 truncate max-w-[150px]">{entry.comment}</p>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
+                        ) : isBlocked ? (
+                          <div className="h-full bg-gray-200 rounded-2xl flex items-center justify-center text-gray-500 font-semibold">
+                            <Lock className="w-5 h-5 mr-2" /> Заблокировано
+                          </div>
+                        ) : (
+                          <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl border-2 border-dashed border-blue-200 flex items-center justify-center text-blue-400 hover:border-blue-400 hover:bg-blue-100 font-semibold">
+                            <Check className="w-5 h-5 mr-2" /> Свободно
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -3630,6 +3643,7 @@ export default function App() {
             teacherSchedule={teacherSchedule}
             blockedSlots={blockedSlots}
             onOpenDetails={handleOpenDetails}
+            onToggleBlockSlot={handleToggleBlockSlot} // Pass to PublicScheduleModal
           />
         )
 
@@ -3664,7 +3678,7 @@ export default function App() {
                 <AdminPage {...commonProps} tabs={dashboardTabs} activeTab={adminTab} setActiveTab={setAdminTab} />
               )
             case "teacher":
-              return <TeacherDashboard {...props} />
+              return <TeacherDashboard {...commonProps} />
             case "rop":
               return (
                 <AdminPage
