@@ -59,8 +59,8 @@ import {
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com";
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD328JACl0H7DcbKVByoQKRXr4GfMdYaks_HU6isXojfNJ55E6XjbLDl/exec";
-const WEBHOOK_URL = "https://akcent.online/webhook";
-const RESCHEDULE_WEBHOOK_URL = "https://akcent.online/reschedule-webhook";
+const WEBHOOK_URL = "https://api.akcent.online/webhook";
+const RESCHEDULE_WEBHOOK_URL = "https://api.akcent.online/reschedule-webhook";
 
 // =================================================================
 //                     DEMO DATA & CONSTANTS
