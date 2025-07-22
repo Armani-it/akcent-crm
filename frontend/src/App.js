@@ -55,7 +55,7 @@ import {
 } from "recharts";
 
 // =================================================================
-//                     CONFIGURATION
+//                        CONFIGURATION
 // =================================================================
 const API_URL = "https://akcent-crm-backend.onrender.com";
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz6acdIGTVsZD328JACl0H7DcbKVByoQKRXr4GfMdYaks_HU6isXojfNJ55E6XjbLDl/exec";
@@ -63,7 +63,7 @@ const WEBHOOK_URL = "https://api.akcent.online/webhook";
 const RESCHEDULE_WEBHOOK_URL = "https://api.akcent.online/reschedule-webhook";
 
 // =================================================================
-//                     DEMO DATA & CONSTANTS
+//                        DEMO DATA & CONSTANTS
 // =================================================================
 const initialUsers = [
   // Администраторы и РОПы
@@ -80,28 +80,28 @@ const initialUsers = [
   { id: "30", username: "kadir", password: "password123", role: "rop", name: "Қадір" },
 
   // Обновленный список учителей
-  { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем", number: "77052531783" },
-  { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым" },
-  { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла" },
-  { id: "13", username: "nazerke", password: "password123", role: "teacher", name: "Назерке" },
-  { id: "14", username: "zamira", password: "password123", role: "teacher", name: "Замира" },
-  { id: "15", username: "aray", password: "password123", role: "teacher", name: "Арай" },
-  { id: "16", username: "aruzhan", password: "password123", role: "teacher", name: "Аружан" },
-  { id: "17", username: "dilnaz", password: "password123", role: "teacher", name: "Дільназ" },
-  { id: "18", username: "abdulla", password: "password123", role: "teacher", name: "Абдулла" },
-  { id: "19", username: "mika", password: "password123", role: "teacher", name: "Мика" },
-  { id: "20", username: "aknur", password: "password123", role: "teacher", name: "Ақнұр" },
-  { id: "21", username: "tileuberdi", password: "password123", role: "teacher", name: "Тілеуберді" },
-  { id: "22", username: "dinara", password: "password123", role: "teacher", name: "Динара" },
-  { id: "23", username: "aiym", password: "password123", role: "teacher", name: "Айым" },
-  { id: "24", username: "akgul", password: "password123", role: "teacher", name: "Ақгүл" },
-  { id: "25", username: "zhuldyz", password: "password123", role: "teacher", name: "Жұлдыз" },
-  { id: "26", username: "korlan", password: "password123", role: "teacher", name: "Қорлан" },
-  { id: "27", username: "uki", password: "password123", role: "teacher", name: "Үкі" },
-  { id: "29", username: "laura", password: "password123", role: "teacher", name: "Лаура" },
-  { id: "31", username: "sultan", password: "password123", role: "teacher", name: "Султан" },
-  { id: "32", username: "zhansaya", password: "password123", role: "teacher", name: "Жансая" },
-  { id: "33", username: "balnur", password: "password123", role: "teacher", name: "Балнұр" },
+  { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем", number: "" },
+  { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым",  number: "" },
+  { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла",  number: ""},
+  { id: "13", username: "nazerke", password: "password123", role: "teacher", name: "Назерке",  number: ""},
+  { id: "14", username: "zamira", password: "password123", role: "teacher", name: "Замира",  number: "" },
+  { id: "15", username: "aray", password: "password123", role: "teacher", name: "Арай",  number: "" },
+  { id: "16", username: "aruzhan", password: "password123", role: "teacher", name: "Аружан",  number: "" },
+  { id: "17", username: "dilnaz", password: "password123", role: "teacher", name: "Дільназ",  number: "" },
+  { id: "18", username: "abdulla", password: "password123", role: "teacher", name: "Абдулла",  number: "" },
+  { id: "19", username: "mika", password: "password123", role: "teacher", name: "Мика",  number: "" },
+  { id: "20", username: "aknur", password: "password123", role: "teacher", name: "Ақнұр",  number: "" },
+  { id: "21", username: "tileuberdi", password: "password123", role: "teacher", name: "Тілеуберді",  number: "" },
+  { id: "22", username: "dinara", password: "password123", role: "teacher", name: "Динара",  number: "" },
+  { id: "23", username: "aiym", password: "password123", role: "teacher", name: "Айым",  number: "" },
+  { id: "24", username: "akgul", password: "password123", role: "teacher", name: "Ақгүл",  number: "" },
+  { id: "25", username: "zhuldyz", password: "password123", role: "teacher", name: "Жұлдыз",  number: "" },
+  { id: "26", username: "korlan", password: "password123", role: "teacher", name: "Қорлан",  number: "" },
+  { id: "27", username: "uki", password: "password123", role: "teacher", name: "Үкі",  number: "" },
+  { id: "29", username: "laura", password: "password123", role: "teacher", name: "Лаура",  number: "" },
+  { id: "31", username: "sultan", password: "password123", role: "teacher", name: "Султан",  number: "" },
+  { id: "32", username: "zhansaya", password: "password123", role: "teacher", name: "Жансая",  number: "" },
+  { id: "33", username: "balnur", password: "password123", role: "teacher", name: "Балнұр",  number: "" },
 ];
 
 const ALL_SOURCES = [
@@ -119,14 +119,23 @@ const ALL_SOURCES = [
 
 const generateTimeSlots = () => {
   const slots = [];
-  for (let hour = 9; hour < 22; hour++) {
-      slots.push(`${hour.toString().padStart(2, "0")}:00`);
+  let hour = 9;
+  let minute = 0;
+
+  while (hour < 23 || (hour === 23 && minute <= 40)) {
+    slots.push(`${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`);
+    
+    minute += 40;
+    if (minute >= 60) {
+      hour += Math.floor(minute / 60);
+      minute %= 60;
+    }
   }
   return slots;
 };
 
 // =================================================================
-//                     HELPER FUNCTIONS
+//                        HELPER FUNCTIONS
 // =================================================================
 
 const formatPhoneNumber = (phoneStr) => {
@@ -167,7 +176,7 @@ const getAppointmentColorForStatus = (status) => {
 }
 
 // =================================================================
-//                     COMMON COMPONENTS
+//                        COMMON COMPONENTS
 // =================================================================
 
 const Spinner = () => (
@@ -205,7 +214,7 @@ const Modal = ({ isVisible, onClose, children, size = "lg" }) => {
 };
 
 // =================================================================
-//                     FEATURE COMPONENTS
+//                        FEATURE COMPONENTS
 // =================================================================
 
 const TeacherNotificationSender = () => {
@@ -735,7 +744,7 @@ const LoginModal = ({ isVisible, onClose, onLogin }) => {
 }
 
 // =================================================================
-//                     VIEW COMPONENTS
+//                        VIEW COMPONENTS
 // =================================================================
 
 const FormPage = ({ onFormSubmit, ropList, showToast, onShowRating, onShowAdminLogin, onShowSchedule }) => {
@@ -1993,7 +2002,7 @@ const ConversionView = ({ entries, teacherSchedule }) => {
     return Object.values(stats)
       .map((data) => ({
         ...data,
-        conversion: data.conducted > 0 ? ((data.payments / data.conducted) * 100).toFixed(1) : 0,
+        conversion: data.conducted > 0 ? parseFloat(((data.payments / data.conducted) * 100).toFixed(1)) : 0,
       }))
       .sort((a, b) => b.conversion - a.conversion)
   }, [filteredEntries, teacherSchedule?.teachers])
@@ -2362,7 +2371,7 @@ const TeacherDashboard = (props) => {
 }
 
 // =================================================================
-//                     REFACTORED ANALYTICS COMPONENTS
+//                        REFACTORED ANALYTICS COMPONENTS
 // =================================================================
 
 const StatCard = ({ title, value, icon, gradient }) => (
@@ -3080,7 +3089,7 @@ const UserModal = ({ user, onClose, onSave }) => {
 
 
 // =================================================================
-//                     MAIN APP COMPONENT
+//                        MAIN APP COMPONENT
 // =================================================================
 
 export default function App() {
