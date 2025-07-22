@@ -80,7 +80,7 @@ const initialUsers = [
   { id: "30", username: "kadir", password: "password123", role: "rop", name: "Қадір" },
 
   // Обновленный список учителей
-  { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем" },
+  { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем", number: "77052531783" },
   { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым" },
   { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла" },
   { id: "13", username: "nazerke", password: "password123", role: "teacher", name: "Назерке" },
@@ -430,6 +430,7 @@ const DetailsModal = ({ entry, onClose, onSave, showToast, readOnly = false }) =
       status: currentStatus,
       trialDate: trialDate,
       assignedTeacher: isRescheduled ? null : entry.assignedTeacher,
+      assignedTeacherNumber: entry.assignedTeacherNumber,
       assignedTime: isRescheduled ? null : entry.assignedTime,
       paymentType: isPaymentStatus ? paymentType : null,
       packageType: isPaymentStatus ? packageType : null,
@@ -1022,10 +1023,13 @@ const DistributionView = ({
       showToast("Этот слот заблокирован", "error")
       return
     }
+    const teacherObj = initialUsers.find(u => u.name === teacher && u.role === "teacher");
+    const assignedPhone = teacherObj?.number || "";
 
     onUpdateEntry(draggedItem.id, {
       ...draggedItem,
       assignedTeacher: teacher,
+      assignedTeacherPhone: assignedPhone,
       assignedTime: time,
       status: "Назначен",
       trialDate: selectedDate || draggedItem.trialDate,
@@ -2181,7 +2185,7 @@ const TeacherScheduleView = ({
                       <td className="p-4 border-b border-gray-100 font-bold text-gray-700">{time}</td>
                       <td
                         className={`p-3 border-b border-gray-100 h-20 cursor-pointer`}
-                        onClick={() => !entry && onToggleBlockSlot(selectedDate, currentUser.name, time)}
+                        onClick={() => !entry && onToggleBlockSlot(selectedDate, currentUser.name, currentUser.number, time)}
                       >
                         {entry ? (
                           <div
@@ -3018,6 +3022,7 @@ const UserModal = ({ user, onClose, onSave }) => {
   const [formData, setFormData] = useState({
     id: user?.id || null,
     name: user?.name || '',
+    number: user?.number || '',
     username: user?.username || '',
     password: '',
     role: user?.role || 'teacher',
@@ -3245,13 +3250,21 @@ export default function App() {
         }
     }
 
-    // Случай 2: Назначение нового урока (ранее не был назначен)
+    // console.log("-----------------------------------------------");
+    // console.log(updatedEntry);
+    // console.log("-----------------------------------------------");
+    // console.log(originalEntry);
+
+
     if (!wasAssigned && isNowAssigned) {
         const payload = {
             teacherName: updatedEntry.assignedTeacher,
             phone: cleanedPhone,
             lessonTime: updatedEntry.assignedTime,
+            teacherPhone: updatedEntry.assignedTeacherPhone || "",
+            studentName: updatedEntry.clientName || "",
         };
+        console.log(payload);
         try {
             await fetch(WEBHOOK_URL, {
                 method: 'POST',
@@ -3272,7 +3285,10 @@ export default function App() {
             lessonIdentifier,
             action: "reschedule",
             newLessonTime: updatedEntry.assignedTime,
+            studentName: updatedEntry.clientName || "",
+            teacherPhone: updatedEntry.assignedTeacherPhone || "",
         };
+        console.log(payload);
         try {
             await fetch(RESCHEDULE_WEBHOOK_URL, {
                 method: 'POST',
