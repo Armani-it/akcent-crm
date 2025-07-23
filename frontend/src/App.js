@@ -3396,7 +3396,7 @@ export default function App() {
 
         showToastMessage("Заявка успешно сохранена на сервере!", "success");
 
-        const sheetData = { ...newEntryData, createdAt: creationDate.toLocaleString('ru-RU', { timeZone: 'Asia/Almaty' }) };
+        const sheetData = { ...newEntryData };
 
         fetch(GOOGLE_SCRIPT_URL, {
             method: 'POST',
