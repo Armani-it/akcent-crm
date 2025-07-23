@@ -81,26 +81,26 @@ const initialUsers = [
 
   // Обновленный список учителей
   { id: "10", username: "asem", password: "password123", role: "teacher", name: "Асем", number: "" },
-  { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым",  number: "" },
-  { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла",  number: ""},
-  { id: "13", username: "nazerke", password: "password123", role: "teacher", name: "Назерке",  number: ""},
+  { id: "11", username: "nazym", password: "password123", role: "teacher", name: "Назым",  number: "87002834038" },
+  { id: "12", username: "shugyla", password: "password123", role: "teacher", name: "Шуғыла",  number: "87073157897"},
+  { id: "13", username: "nazerke", password: "password123", role: "teacher", name: "Назерке",  number: "87765260330"},
   { id: "14", username: "zamira", password: "password123", role: "teacher", name: "Замира",  number: "" },
-  { id: "15", username: "aray", password: "password123", role: "teacher", name: "Арай",  number: "" },
-  { id: "16", username: "aruzhan", password: "password123", role: "teacher", name: "Аружан",  number: "" },
-  { id: "17", username: "dilnaz", password: "password123", role: "teacher", name: "Дільназ",  number: "" },
+  { id: "15", username: "aray", password: "password123", role: "teacher", name: "Арай",  number: "87777690191" },
+  { id: "16", username: "aruzhan", password: "password123", role: "teacher", name: "Аружан",  number: "87777690191" },
+  { id: "17", username: "dilnaz", password: "password123", role: "teacher", name: "Дільназ",  number: "87754752090" },
   { id: "18", username: "abdulla", password: "password123", role: "teacher", name: "Абдулла",  number: "" },
-  { id: "19", username: "mika", password: "password123", role: "teacher", name: "Мика",  number: "" },
+  { id: "19", username: "mika", password: "password123", role: "teacher", name: "Мика",  number: "87089670215" },
   { id: "20", username: "aknur", password: "password123", role: "teacher", name: "Ақнұр",  number: "" },
-  { id: "21", username: "tileuberdi", password: "password123", role: "teacher", name: "Тілеуберді",  number: "" },
-  { id: "22", username: "dinara", password: "password123", role: "teacher", name: "Динара",  number: "" },
-  { id: "23", username: "aiym", password: "password123", role: "teacher", name: "Айым",  number: "" },
+  { id: "21", username: "tileuberdi", password: "password123", role: "teacher", name: "Тілеуберді",  number: "87776922795" },
+  { id: "22", username: "dinara", password: "password123", role: "teacher", name: "Динара",  number: "87473821036" },
+  { id: "23", username: "aiym", password: "password123", role: "teacher", name: "Айым",  number: "87074340586" },
   { id: "24", username: "akgul", password: "password123", role: "teacher", name: "Ақгүл",  number: "" },
   { id: "25", username: "zhuldyz", password: "password123", role: "teacher", name: "Жұлдыз",  number: "" },
-  { id: "26", username: "korlan", password: "password123", role: "teacher", name: "Қорлан",  number: "" },
-  { id: "27", username: "uki", password: "password123", role: "teacher", name: "Үкі",  number: "" },
+  { id: "26", username: "korlan", password: "password123", role: "teacher", name: "Қорлан",  number: "87472552129" },
+  { id: "27", username: "uki", password: "password123", role: "teacher", name: "Үкі",  number: "87028199956" },
   { id: "29", username: "laura", password: "password123", role: "teacher", name: "Лаура",  number: "" },
-  { id: "31", username: "sultan", password: "password123", role: "teacher", name: "Султан",  number: "" },
-  { id: "32", username: "zhansaya", password: "password123", role: "teacher", name: "Жансая",  number: "" },
+  { id: "31", username: "sultan", password: "password123", role: "teacher", name: "Султан",  number: "87760010233" },
+  { id: "32", username: "zhansaya", password: "password123", role: "teacher", name: "Жансая",  number: "87772920274" },
   { id: "33", username: "balnur", password: "password123", role: "teacher", name: "Балнұр",  number: "" },
 ];
 
@@ -1016,6 +1016,7 @@ const DistributionView = ({
     return false;
   }, []);
 
+
   const handleDragStart = (e, entry) => {
     if (readOnly || isMobile) return
     setDraggedItem(entry)
@@ -1027,18 +1028,19 @@ const DistributionView = ({
     e.preventDefault()
     setDragOverCell(null)
     if (!draggedItem || readOnly || isMobile) return
-    const cellKey = `${selectedDate}_${teacher}_${time}`
+    const cellKey = `${selectedDate}_${teacher.name}_${time}`
     if (blockedSlots.some((slot) => slot.id === cellKey)) {
       showToast("Этот слот заблокирован", "error")
       return
     }
-    const teacherObj = initialUsers.find(u => u.name === teacher && u.role === "teacher");
-    const assignedPhone = teacherObj?.number || "";
+
+    console.log(teacher, time, draggedItem);
+    
 
     onUpdateEntry(draggedItem.id, {
       ...draggedItem,
-      assignedTeacher: teacher,
-      assignedTeacherPhone: assignedPhone,
+      assignedTeacher: teacher.name,
+      assignedTeacherPhone: teacher.number || "",
       assignedTime: time,
       status: "Назначен",
       trialDate: selectedDate || draggedItem.trialDate,
@@ -1051,7 +1053,8 @@ const DistributionView = ({
   }
 
   const handleDragEnter = (e, teacher, time) => {
-    if (!readOnly && !isMobile) setDragOverCell(`${teacher}-${time}`)
+    console.log(teacher);
+    if (!readOnly && !isMobile) setDragOverCell(`${teacher.name}-${time}`)
   }
 
   const handleDragLeave = (e) => {
@@ -1076,9 +1079,9 @@ const DistributionView = ({
 
   const handleCellClick = (teacher, time) => {
     if (readOnly) return;
-    const cellKey = `${selectedDate}_${teacher}_${time}`;
+    const cellKey = `${selectedDate}_${teacher.name}_${time}`;
     const isCellBlocked = blockedSlots.some((slot) => slot.id === cellKey);
-    const isCellOccupied = entries.some(e => e.assignedTeacher === teacher && e.assignedTime === time && e.trialDate === selectedDate);
+    const isCellOccupied = entries.some(e => e.assignedTeacher === teacher.name && e.assignedTime === time && e.trialDate === selectedDate);
 
     if (isMobile) {
         if (selectedEntryForMobile) {
@@ -1086,7 +1089,7 @@ const DistributionView = ({
             if (!isCellBlocked && !isCellOccupied) {
                 onUpdateEntry(selectedEntryForMobile.id, {
                     ...selectedEntryForMobile,
-                    assignedTeacher: teacher,
+                    assignedTeacher: teacher.name,
                     assignedTime: time,
                     status: "Назначен",
                     trialDate: selectedDate,
@@ -1098,7 +1101,7 @@ const DistributionView = ({
             // Logic for blocking a cell (double tap)
             if (!isCellOccupied) {
                 if (cellToBlock === cellKey) {
-                    onToggleBlockSlot(selectedDate, teacher, time);
+                    onToggleBlockSlot(selectedDate, teacher.name, time);
                     setCellToBlock(null);
                 } else {
                     setCellToBlock(cellKey);
@@ -1112,7 +1115,7 @@ const DistributionView = ({
     } else {
         // Desktop logic (single click to block)
         if (!isCellOccupied) {
-            onToggleBlockSlot(selectedDate, teacher, time);
+            onToggleBlockSlot(selectedDate, teacher.name, time);
         }
     }
   };
@@ -1161,6 +1164,7 @@ const DistributionView = ({
     blockedSlots.forEach((slot) => map.set(slot.id, true))
     return map
   }, [blockedSlots])
+  console.log(teacherSchedule.teacherObjList);
 
   return (
     <div className="space-y-6">
@@ -1325,12 +1329,12 @@ const DistributionView = ({
                       <th className="sticky top-0 left-0 bg-gray-100 p-3 border-b-2 border-gray-200 font-bold text-gray-900 text-left min-w-[80px] z-30 text-sm">
                         Время
                       </th>
-                      {teacherSchedule.teachers.map((teacher) => (
+                      {teacherSchedule.teacherObjList.map((teacher) => (
                         <th
-                          key={teacher}
+                          key={teacher.name}
                           className="sticky top-0 bg-gray-100 p-3 border-b-2 border-gray-200 font-bold text-gray-900 min-w-[120px] text-center text-sm z-20"
                         >
-                          {teacher}
+                          {teacher.name}
                         </th>
                       ))}
                     </tr>
@@ -1341,11 +1345,11 @@ const DistributionView = ({
                         <td className="sticky left-0 bg-white p-3 border-b border-gray-100 font-bold text-xs text-gray-700 z-10">
                           {time}
                         </td>
-                        {teacherSchedule.teachers.map((teacher) => {
-                          const assignedEntry = assignedEntriesMap.get(`${teacher}-${time}`)
-                          const cellKey = `${selectedDate}_${teacher}_${time}`
+                        {teacherSchedule.teacherObjList.map((teacher) => {
+                          const assignedEntry = assignedEntriesMap.get(`${teacher.name}-${time}`)
+                          const cellKey = `${selectedDate}_${teacher.name}_${time}`
                           const isBlocked = blockedSlotsMap.has(cellKey)
-                          const isDragOver = dragOverCell === `${teacher}-${time}`
+                          const isDragOver = dragOverCell === `${teacher.name}-${time}`
                           const isPrimedForBlock = cellToBlock === cellKey;
 
                           let cellClasses = "p-2 border-b border-gray-100 h-16 transition-all"
@@ -3105,10 +3109,10 @@ export default function App() {
 
   const ropList = useMemo(() => users.filter((u) => u.role === "rop"), [users])
   const teacherList = useMemo(() => users.filter((u) => u.role === "teacher").map((t) => t.name), [users])
-  const [teacherSchedule, setTeacherSchedule] = useState({ teachers: teacherList, timeSlots: generateTimeSlots() })
-  
+  const teacherObjList = useMemo(() => users.filter((u) => u.role === "teacher"), [users]);
+  const [teacherSchedule, setTeacherSchedule] = useState({ teachers: teacherList, timeSlots: generateTimeSlots(), teacherObjList: teacherObjList })
   useEffect(() => {
-    setTeacherSchedule({ teachers: teacherList, timeSlots: generateTimeSlots() })
+    setTeacherSchedule({ teachers: teacherList, timeSlots: generateTimeSlots(), teacherObjList: teacherObjList })
   }, [teacherList]);
 
   const [toast, setToast] = useState({ isVisible: false, message: "", type: "" })
