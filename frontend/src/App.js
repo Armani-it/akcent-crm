@@ -1205,6 +1205,7 @@ const DistributionView = ({
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
                 </div>
               </div>
+              {!isResheduledEntriesOn && (
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
                   <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
@@ -1257,6 +1258,7 @@ const DistributionView = ({
                   </div>
                 </div>
               </div>
+              )}
                 
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
                 <div onClick={handleToggleIsResheduledEntriesOn} className="p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-orange-50">
