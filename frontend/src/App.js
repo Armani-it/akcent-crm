@@ -1007,7 +1007,9 @@ const DistributionView = ({
   const [dragOverCell, setDragOverCell] = useState(null)
   const [selectedEntryForMobile, setSelectedEntryForMobile] = useState(null);
   const [cellToBlock, setCellToBlock] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("")
+  const [isResheduledEntriesOn, setIsResheduledEntriesOn] = useState(false)
+
 
   const isMobile = useMemo(() => {
     if (typeof window !== 'undefined') {
@@ -1015,6 +1017,11 @@ const DistributionView = ({
     }
     return false;
   }, []);
+
+
+  const handleToggleIsResheduledEntriesOn = () => {
+    setIsResheduledEntriesOn(prev => !prev);
+  };
 
 
   const handleDragStart = (e, entry) => {
@@ -1144,7 +1151,8 @@ const DistributionView = ({
   const rescheduledEntries = useMemo(() => {
     return filteredBaseEntries.filter((e) => {
       const isRescheduled = e.status === "Перенос"
-      const isPastAndUnassigned = !e.assignedTeacher && e.trialDate && e.trialDate < today
+      const isNaNStatus = e.status === "Статус жоқ"
+      const isPastAndUnassigned = !isNaNStatus && !e.assignedTeacher && e.trialDate && e.trialDate < today
       return isRescheduled || isPastAndUnassigned
     })
   }, [filteredBaseEntries, today])
@@ -1185,7 +1193,7 @@ const DistributionView = ({
         {!readOnly && (
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-24 space-y-6 max-h-[calc(100vh-7rem)] overflow-y-auto p-1 rounded-2xl">
-              <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+              <div className="p-3 bg-white rounded-2xl shadow-sm border border-gray-100">
                 <div className="relative">
                   <input
                     type="text"
@@ -1207,7 +1215,7 @@ const DistributionView = ({
                   </h3>
                 </div>
                 <div className="p-6">
-                  <div className="space-y-4 max-h-[40vh] overflow-y-auto">
+                  <div className="space-y-4 max-h-[50vh] overflow-y-auto">
                     {unassignedEntries.length > 0 ? (
                       unassignedEntries.map((entry) => (
                         <div
@@ -1215,7 +1223,7 @@ const DistributionView = ({
                           draggable={!readOnly && !isMobile}
                           onDragStart={(e) => handleDragStart(e, entry)}
                           onClick={() => handleEntryClick(entry)}
-                          className={`p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 rounded-xl transition-all ${
+                          className={`p-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 rounded-xl transition-all ${
                             !readOnly ? "cursor-pointer" : ""
                           } ${
                             !readOnly && !isMobile ? "cursor-grab active:cursor-grabbing hover:shadow-lg hover:from-blue-100 hover:to-indigo-100 hover:border-blue-300 transform hover:-translate-y-1" : ""
@@ -1249,8 +1257,9 @@ const DistributionView = ({
                   </div>
                 </div>
               </div>
+                
               <div className="bg-white rounded-2xl border border-gray-100 shadow-sm">
-                <div className="p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-orange-50">
+                <div onClick={handleToggleIsResheduledEntriesOn} className="p-6 border-b border-gray-100 bg-gradient-to-r from-red-50 to-orange-50">
                   <h3 className="font-bold text-lg text-gray-900 flex items-center gap-3">
                     <div className="w-4 h-4 bg-red-400 rounded-full animate-pulse"></div>Перенесенные
                     <span className="ml-auto bg-gradient-to-r from-red-500 to-orange-500 text-white text-sm font-bold px-3 py-1 rounded-full">
@@ -1258,8 +1267,10 @@ const DistributionView = ({
                     </span>
                   </h3>
                 </div>
-                <div className="p-6">
-                  <div className="space-y-4 max-h-[25vh] overflow-y-auto">
+                
+              {isResheduledEntriesOn && (
+                <div className="p-4">
+                  <div className="space-y-4 max-h-[60vh] overflow-y-auto">
                     {rescheduledEntries.length > 0 ? (
                       rescheduledEntries.map((entry) => (
                         <div
@@ -1300,6 +1311,8 @@ const DistributionView = ({
                     )}
                   </div>
                 </div>
+              )}
+
               </div>
             </div>
           </div>
@@ -3155,7 +3168,6 @@ export default function App() {
     }
   }, [showToastMessage]);
 
-  // Effect for initial data loading and session restoration
   useEffect(() => {
     const loadInitialData = async () => {
         setIsLoading(true);
@@ -3172,7 +3184,7 @@ export default function App() {
   }, [fetchEntries, fetchBlockedSlots]);
 
   useEffect(() => {
-    if (window.location.hostname === 'https://akcent-crm-frontend.onrender.com') {
+    if (window.location.hostname === 'akcent-crm-frontend.onrender.com') {
       window.location.href('https://akcent.online');
     }
     console.log(window.location.hostname);
