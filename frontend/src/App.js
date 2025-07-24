@@ -3171,7 +3171,12 @@ export default function App() {
     loadInitialData();
   }, [fetchEntries, fetchBlockedSlots]);
 
-  // Effect for periodic data fetching (polling)
+  useEffect(() => {
+    if (window.location.hostname === 'https://akcent-crm-frontend.onrender.com/') {
+      window.location.replace('https://akcent.online');
+    }
+  }, []);
+
   useEffect(() => {
     if (currentUser) { // Only fetch if user is logged in
         const interval = setInterval(() => {
