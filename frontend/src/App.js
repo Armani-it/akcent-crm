@@ -3185,7 +3185,7 @@ export default function App() {
 
   useEffect(() => {
     if (window.location.hostname === 'akcent-crm-frontend.onrender.com') {
-      window.location.href('https://akcent.online');
+      window.location.href = 'https://akcent.online';
     }
     console.log(window.location.hostname);
   }, []);
