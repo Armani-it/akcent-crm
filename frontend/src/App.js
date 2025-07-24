@@ -3172,7 +3172,7 @@ export default function App() {
   }, [fetchEntries, fetchBlockedSlots]);
 
   useEffect(() => {
-    if (window.location.hostname === 'https://akcent-crm-frontend.onrender.com/') {
+    if (window.location.hostname === 'https://akcent-crm-frontend.onrender.com') {
       window.location.replace('https://akcent.online');
     }
   }, []);
