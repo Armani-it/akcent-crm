@@ -452,7 +452,6 @@ const FormPage = ({
     if (timeParam) setTrialTime(timeParam);
     if (sourceParam) setSource(sourceParam);
     if (commentParam) setComment(commentParam);
-    console.log(trialDate);
 
     // Clean URL
     if ([...params.keys()].length > 0) {
@@ -1089,7 +1088,6 @@ export default function App() {
     if (window.location.hostname === "akcent-crm-frontend.onrender.com") {
       window.location.href = "https://akcent.online";
     }
-    console.log(window.location.hostname);
   }, []);
 
   useEffect(() => {
@@ -1231,7 +1229,6 @@ export default function App() {
         teacherPhone: updatedEntry.assignedTeacherPhone || "",
         studentName: updatedEntry.clientName || "",
       };
-      console.log(payload);
       try {
         await fetch(WEBHOOK_URL, {
           method: "POST",
@@ -1260,7 +1257,6 @@ export default function App() {
         studentName: updatedEntry.clientName || "",
         teacherPhone: updatedEntry.assignedTeacherPhone || "",
       };
-      console.log(payload);
       try {
         await fetch(RESCHEDULE_WEBHOOK_URL, {
           method: "POST",

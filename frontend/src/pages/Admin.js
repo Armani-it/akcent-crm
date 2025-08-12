@@ -201,41 +201,23 @@ const TrialsListView = ({
   const [visibleCount, setVisibleCount] = useState(50);
 
   const filteredEntries = useMemo(() => {
-    return entries
-      .filter((entry) => {
-        const startDate = filters.startDate
-          ? new Date(filters.startDate)
-          : null;
-        if (startDate) startDate.setUTCHours(0, 0, 0, 0);
+    const start = filters.startDate ? new Date(filters.startDate) : null;
+    const end = filters.endDate ? new Date(filters.endDate) : null;
 
-        const endDate = filters.endDate ? new Date(filters.endDate) : null;
-        if (endDate) endDate.setUTCHours(23, 59, 59, 999);
+    if (start) start.setHours(0, 0, 0, 0);
+    if (end) end.setHours(23, 59, 59, 999);
 
-        const entryTrialDate = entry.trialDate
-          ? new Date(entry.trialDate)
-          : null;
-
-        let dateMatch = true;
-        if (startDate && endDate) {
-          dateMatch =
-            entryTrialDate &&
-            entryTrialDate >= startDate &&
-            entryTrialDate <= endDate;
-        } else if (startDate) {
-          dateMatch = entryTrialDate && entryTrialDate >= startDate;
-        } else if (endDate) {
-          dateMatch = entryTrialDate && entryTrialDate <= endDate;
-        }
-
-        return (
-          dateMatch &&
-          (!filters.rop || entry.rop === filters.rop) &&
-          (!filters.source || entry.source === filters.source) &&
-          (!filters.status || (entry.status || "Ожидает") === filters.status) &&
-          (!filters.paymentType || entry.paymentType === filters.paymentType)
-        );
-      })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return entries.filter((entry) => {
+      // Prioritize the actual trial date for filtering, but fall back to creation date
+      const entryDate = entry.trialDate
+        ? new Date(entry.trialDate)
+        : new Date(entry.createdAt);
+      const dateMatch =
+        (!start || entryDate >= start) && (!end || entryDate <= end);
+      const sourceMatch = !filters.source || entry.source === filters.source;
+      const ropMatch = !filters.rop || entry.rop === filters.rop;
+      return dateMatch && sourceMatch && ropMatch;
+    });
   }, [entries, filters]);
 
   // NEW: A separate memo to slice the visible entries
@@ -1169,8 +1151,6 @@ const DistributionView = ({
       return;
     }
 
-    console.log(teacher, time, draggedItem);
-
     onUpdateEntry(draggedItem.id, {
       ...draggedItem,
       assignedTeacher: teacher.name,
@@ -1187,7 +1167,6 @@ const DistributionView = ({
   };
 
   const handleDragEnter = (e, teacher, time) => {
-    console.log(teacher);
     if (!readOnly && !isMobile) setDragOverCell(`${teacher.name}-${time}`);
   };
 
@@ -1196,10 +1175,7 @@ const DistributionView = ({
   };
 
   const handleEntryClick = (entry) => {
-    if (readOnly) {
-      onOpenDetails(entry, true);
-      return;
-    }
+    if (readOnly) return;
     if (isMobile) {
       if (selectedEntryForMobile?.id === entry.id) {
         setSelectedEntryForMobile(null); // Deselect
@@ -1207,7 +1183,6 @@ const DistributionView = ({
         setSelectedEntryForMobile(entry); // Select
       }
     } else {
-      onOpenDetails(entry, readOnly);
     }
   };
 
@@ -1314,7 +1289,6 @@ const DistributionView = ({
     blockedSlots.forEach((slot) => map.set(slot.id, true));
     return map;
   }, [blockedSlots]);
-  console.log(teacherSchedule.teacherObjList);
 
   return (
     <div className="space-y-6">
@@ -1508,7 +1482,7 @@ const DistributionView = ({
                 <Calendar className="w-6 h-6 text-blue-600" />
                 График преподавателей
                 {selectedDate && (
-                  <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full font-semibold">
+                  <span className="text-sm text-blue-600 bg-blue-100 text-center md:px-3 py-1 rounded-full font-semibold">
                     {new Date(selectedDate + "T00:00:00").toLocaleDateString(
                       "ru-RU",
                       {

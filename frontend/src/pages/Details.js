@@ -307,11 +307,11 @@ export const DetailsModal = ({
           </div>
         )}
       </div>
-      <div className="p-3 md:p-8 border-t border-gray-200">
-        <div className="flex justify-end gap-4">
+      <div className="p-2 md:p-8 border-t border-gray-200">
+        <div className="flex justify-end gap-2 md:gap-4">
           <button
             onClick={onClose}
-            className="px-3 py-1 md:px-8 md:py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-sm md:text-base"
+            className="px-1 py-1 md:px-8 md:py-3 bg-white border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors font-semibold text-sm md:text-base"
           >
             Закрыть
           </button>
@@ -321,7 +321,7 @@ export const DetailsModal = ({
               {entry.assignedTeacher && (
                 <button
                   onClick={handleUnassignClick}
-                  className="flex-1 sm:flex-initial px-3 py-1 md:px-6 md:py-3 bg-gradient-to-r from-yellow-500 to-orange-500 text-white rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all font-semibold shadow-lg flex items-center justify-center gap-2 text-sm md:text-base"
+                  className="flex-1 sm:flex-initial px-1 py-1 md:px-6 md:py-3 bg-red-500 text-white rounded-xl hover:from-yellow-600 hover:to-orange-600 transition-all font-semibold shadow-lg flex items-center justify-center gap-1 md:gap-2 text-sm md:text-base"
                 >
                   <ArrowLeft size={18} />
                   Вернуть в список
@@ -332,7 +332,7 @@ export const DetailsModal = ({
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="flex-1 sm:flex-initial px-3 py-1 md:px-8 md:py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 shadow-lg text-sm md:text-base"
+                className="flex-1 sm:flex-initial px-1 py-1 md:px-8 md:py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all font-semibold disabled:opacity-50 shadow-lg text-sm md:text-base"
               >
                 {isSaving ? "Сохранение..." : "Сохранить"}
               </button>
