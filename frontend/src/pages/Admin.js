@@ -11,6 +11,7 @@ import {
   Filter,
   History,
   Lock,
+  Menu,
   PieChartIcon,
   Plus,
   Search,
@@ -22,7 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { TeacherNotificationSender } from "../components/TeacherSendNotification/TeacherNotificationSender";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { UserModal } from "./User";
 import { formatPhoneNumber } from "../components/FormatPhoneNumber/FormatPhoneNumber";
 import { PlanModal } from "./Plan";
@@ -1496,7 +1497,7 @@ const DistributionView = ({
               </h3>
             </div>
             <div className="p-3 md:p-6">
-              <div className="overflow-auto max-h-[70vh]">
+              <div className="overflow-x-auto max-h-[70vh]">
                 <table className="w-full border-collapse relative">
                   <thead>
                     <tr>
@@ -2264,6 +2265,30 @@ export const AdminPage = ({
   onSavePlans,
   ...props
 }) => {
+  // NEW: State and ref for the mobile menu
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // NEW: A simple hook to detect if the view is mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // NEW: Effect to close the menu when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuRef]);
+
   const renderAdminView = () => {
     switch (activeTab) {
       case "trials-list":
@@ -2307,6 +2332,15 @@ export const AdminPage = ({
     }
   };
 
+  // NEW: Filter tabs based on user role and readOnly status
+  const filteredTabs = useMemo(
+    () =>
+      tabs.filter(
+        (tab) => !readOnly && (currentUser.role === "admin" || !tab.adminOnly)
+      ),
+    [tabs, readOnly, currentUser.role]
+  );
+
   return (
     <section className="space-y-8">
       <div className="flex flex-wrap justify-between items-center gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -2319,7 +2353,7 @@ export const AdminPage = ({
             Назад
           </button>
         )}
-        <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl flex-wrap">
+        {/* <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl flex-wrap">
           {tabs
             .filter(
               (tab) =>
@@ -2329,16 +2363,72 @@ export const AdminPage = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                className={`w-full py-2 md:w-fit md:px-6 md:py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
                   activeTab === tab.id
                     ? "bg-white text-blue-600 shadow-lg transform scale-105"
-                    : "text-gray-600 hover:bg-gray-50"
+                    : "text-gray-600 hover:bg-gray-50 bg-gray-200"
                 }`}
               >
                 {tab.label}
               </button>
             ))}
-        </div>
+        </div> */}
+        {isMobile ? (
+          // --- MOBILE VIEW ---
+          <div className="relative w-full" ref={menuRef}>
+            <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl">
+              {/* Always show the active tab */}
+              <button className="flex-1 px-4 py-3 rounded-xl text-sm font-bold bg-white text-blue-600 shadow-lg">
+                {filteredTabs.find((t) => t.id === activeTab)?.label}
+              </button>
+              {/* Burger Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                className="p-3  rounded-xl text-sm font-bold bg-gray-200 text-gray-600 hover:bg-gray-300"
+              >
+                <Menu size={20} />
+              </button>
+            </div>
+
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-560 bg-white rounded-2xl shadow-xl border z-20 p-2">
+                {filteredTabs
+                  .filter((tab) => tab.id !== activeTab) // Show only other tabs
+                  .map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setIsMenuOpen(false); // Close menu on selection
+                      }}
+                      className="w-full text-left px-4 py-3 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100"
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          // --- DESKTOP VIEW (Your original logic) ---
+          <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl flex-wrap">
+            {filteredTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                  activeTab === tab.id
+                    ? "bg-white text-blue-600 shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-gray-50 bg-gray-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="text-sm text-gray-600 font-bold bg-gray-100 px-4 py-2 rounded-xl">
           {new Date().toLocaleDateString("ru-RU", {
             weekday: "long",
