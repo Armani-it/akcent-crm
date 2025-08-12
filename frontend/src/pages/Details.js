@@ -93,7 +93,7 @@ export const DetailsModal = ({
 
   return (
     <Modal isVisible={!!entry} onClose={onClose} size="xl">
-      <div className="p-6 md:p-8 border-b border-gray-100">
+      <div className="p-8 border-b border-gray-100">
         <div className="flex justify-between items-start">
           <div>
             <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-4">
@@ -109,7 +109,7 @@ export const DetailsModal = ({
           </div>
           <button
             onClick={onClose}
-            className="p-3 rounded-xl hover:bg-gray-100 transition-colors"
+            className="p-1 rounded-xl hover:bg-gray-100 transition-colors"
           >
             <X size={24} />
           </button>

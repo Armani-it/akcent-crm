@@ -1,10 +1,10 @@
 import {
   ArrowLeft,
-  BarChart,
   BookCopy,
   BookOpen,
   Calendar,
   CheckCircle,
+  ChevronsDown,
   Clock,
   DollarSign,
   Edit,
@@ -30,6 +30,7 @@ import { StatCard } from "../components/StatCard/StatCard";
 import { FunnelStatCard } from "../components/FunnelStatCard/FunnelStatCard";
 import {
   Bar,
+  BarChart,
   CartesianGrid,
   ComposedChart,
   LabelList,
@@ -197,6 +198,8 @@ const TrialsListView = ({
     return counts;
   }, [entries]);
 
+  const [visibleCount, setVisibleCount] = useState(50);
+
   const filteredEntries = useMemo(() => {
     return entries
       .filter((entry) => {
@@ -234,6 +237,21 @@ const TrialsListView = ({
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [entries, filters]);
+
+  // NEW: A separate memo to slice the visible entries
+  const visibleEntries = useMemo(() => {
+    return filteredEntries.slice(0, visibleCount);
+  }, [filteredEntries, visibleCount]);
+
+  // NEW: Reset visible count when filters change
+  useEffect(() => {
+    setVisibleCount(50);
+  }, [filters]);
+
+  // NEW: Handler for the "Show More" button
+  const handleShowMore = () => {
+    setVisibleCount((prevCount) => prevCount + 50);
+  };
 
   const handleFilterChange = (e) => {
     setFilters((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -401,7 +419,7 @@ const TrialsListView = ({
               ].map((header) => (
                 <th
                   key={header}
-                  className="px-5 py-2 md:px-8 md:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
+                  className="px-3 py-2 md:px-8 md:py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
                 >
                   {header}
                 </th>
@@ -409,7 +427,7 @@ const TrialsListView = ({
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {filteredEntries.map((entry, index) => (
+            {visibleEntries.map((entry, index) => (
               <tr
                 key={entry.id}
                 onClick={() => onOpenDetails(entry, readOnly)}
@@ -417,33 +435,33 @@ const TrialsListView = ({
                   index % 2 === 0 ? "bg-white" : "bg-gray-50"
                 }`}
               >
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap">
-                  <div className="font-bold text-gray-900">
+                <td className="px-3 py-3 md:px-8 md:py-6 whitespace-nowrap">
+                  <div className="font-semibold text-gray-900">
                     {entry.clientName}
                   </div>
                 </td>
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
+                <td className="px-3 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
                   {formatPhoneNumber(entry.phone)}
                 </td>
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
+                <td className="px-3 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
                   {entry.trialDate} {entry.trialTime}
                 </td>
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
+                <td className="px-3 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
                   {entry.rop}
                 </td>
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
+                <td className="px-3 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm text-gray-600 font-medium">
                   {entry.assignedTeacher || "---"}
                 </td>
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap">
+                <td className="px-3 py-3 md:px-7 md:py-6 whitespace-nowrap">
                   <span
-                    className={`inline-flex px-3 py-2 text-xs font-bold rounded-full shadow-sm ${getStatusBadge(
+                    className={`inline-flex p-2 text-xs font-bold rounded-full shadow-sm ${getStatusBadge(
                       entry.status || "Ожидает"
                     )}`}
                   >
                     {entry.status || "Ожидает"}
                   </span>
                 </td>
-                <td className="px-5 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm font-bold">
+                <td className="px-3 py-3 md:px-8 md:py-6 whitespace-nowrap text-sm font-bold">
                   {entry.paymentAmount > 0 ? (
                     <span className="text-green-600">
                       {entry.paymentAmount.toLocaleString("ru-RU")} ₸
@@ -457,19 +475,34 @@ const TrialsListView = ({
           </tbody>
         </table>
       </div>
-      {filteredEntries.length === 0 && (
-        <div className="text-center py-16">
-          <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
-            <BookOpen className="w-10 h-10 text-gray-400" />
+
+      <div className="p-6 text-center">
+        {filteredEntries.length === 0 ? (
+          <div className="text-center py-10">
+            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <BookOpen className="w-10 h-10 text-gray-400" />
+            </div>
+            <p className="text-gray-500 font-semibold text-lg">
+              Записи не найдены
+            </p>
+            <p className="text-sm text-gray-400 mt-2">
+              Попробуйте изменить фильтры поиска
+            </p>
           </div>
-          <p className="text-gray-500 font-semibold text-lg">
-            Записи не найдены
+        ) : visibleCount < filteredEntries.length ? (
+          <button
+            onClick={handleShowMore}
+            className="flex items-center justify-center gap-2 px-3 py-2 text-sm md:text-base md:px-6 md:py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+          >
+            <ChevronsDown size={18} />
+            Показать еще 50
+          </button>
+        ) : (
+          <p className="text-gray-500 font-semibold">
+            Всего записей: {filteredEntries.length}
           </p>
-          <p className="text-sm text-gray-400 mt-2">
-            Попробуйте изменить фильтры поиска
-          </p>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 };
@@ -661,15 +694,17 @@ const LeaderboardView = ({
               <p className="text-blue-100 text-sm font-semibold uppercase tracking-wide">
                 Жалпы пробный
               </p>
-              <p className="text-3xl font-black mt-2">{totalTrials}</p>
+              <p className="text-2xl md:text-3xl font-black mt-2">
+                {totalTrials}
+              </p>
               {totalTrialPlan > 0 && (
                 <p className="text-blue-200 text-sm mt-1">
                   План: {totalTrialPlan}
                 </p>
               )}
             </div>
-            <div className="w-14 h-14 bg-blue-400 rounded-2xl flex items-center justify-center shadow-lg">
-              <BookOpen className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-blue-400 rounded-2xl flex items-center justify-center shadow-lg">
+              <BookOpen className="w-6 h-6 md:w-7 md:h-7 text-white" />
             </div>
           </div>
         </div>
@@ -679,7 +714,7 @@ const LeaderboardView = ({
               <p className="text-green-100 text-sm font-semibold uppercase tracking-wide">
                 Жалпы касса
               </p>
-              <p className="text-3xl font-black mt-2">
+              <p className="text-2xl md:text-3xl font-black mt-2">
                 {totalCash.toLocaleString("ru-RU")} ₸
               </p>
               {totalPlan > 0 && (
@@ -688,8 +723,8 @@ const LeaderboardView = ({
                 </p>
               )}
             </div>
-            <div className="w-14 h-14 bg-green-400 rounded-2xl flex items-center justify-center shadow-lg">
-              <TrendingUp className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-green-400 rounded-2xl flex items-center justify-center shadow-lg">
+              <TrendingUp className="w-6 h-6 md:w-7 md:h-7 text-white" />
             </div>
           </div>
         </div>
@@ -699,7 +734,7 @@ const LeaderboardView = ({
               <p className="text-purple-100 text-sm font-semibold uppercase tracking-wide">
                 Касса осталось
               </p>
-              <p className="text-3xl font-black mt-2">
+              <p className="text-2xl md:text-3xl font-black mt-2">
                 {Math.max(totalPlan - totalCash, 0).toLocaleString("ru-RU")} ₸
               </p>
               <p className="text-purple-200 text-sm mt-1">
@@ -709,8 +744,8 @@ const LeaderboardView = ({
                 выполнено
               </p>
             </div>
-            <div className="w-14 h-14 bg-purple-400 rounded-2xl flex items-center justify-center shadow-lg">
-              <Target className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-purple-400 rounded-2xl flex items-center justify-center shadow-lg">
+              <Target className="w-6 h-6 md:w-7 md:h-7 text-white" />
             </div>
           </div>
         </div>
@@ -720,7 +755,7 @@ const LeaderboardView = ({
               <p className="text-orange-100 text-sm font-semibold uppercase tracking-wide">
                 Пробный осталось
               </p>
-              <p className="text-3xl font-black mt-2">
+              <p className="text-2xl md:text-3xl font-black mt-2">
                 {Math.max(totalTrialPlan - totalTrials, 0)}
               </p>
               <p className="text-orange-200 text-sm mt-1">
@@ -730,8 +765,8 @@ const LeaderboardView = ({
                 выполнено
               </p>
             </div>
-            <div className="w-14 h-14 bg-orange-400 rounded-2xl flex items-center justify-center shadow-lg">
-              <Users className="w-7 h-7 text-white" />
+            <div className="w-12 h-12 md:w-14 md:h-14 bg-orange-400 rounded-2xl flex items-center justify-center shadow-lg">
+              <Users className="w-6 h-6 md:w-7 md:h-7 text-white" />
             </div>
           </div>
         </div>
@@ -746,12 +781,12 @@ const LeaderboardView = ({
           {leaderboardData.map((rop, index) => (
             <div
               key={rop.name}
-              className="p-8 hover:bg-gray-50 transition-colors"
+              className="p-5 md:p-8 hover:bg-gray-50 transition-colors"
             >
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-6">
+              <div className="flex items-center justify-between mb-3 md:mb-6">
+                <div className="flex items-center gap-4 md:gap-6">
                   <div
-                    className={`w-16 h-16 bg-gradient-to-r ${getRankColor(
+                    className={`w-14 h-14 md:w-16 md:h-16 bg-gradient-to-r ${getRankColor(
                       index
                     )} rounded-2xl flex items-center justify-center text-white font-black shadow-lg`}
                   >
@@ -773,7 +808,7 @@ const LeaderboardView = ({
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="text-3xl font-black text-green-600">
+                  <p className="text-2xl md:text-3xl font-semibold md:font-black text-green-600">
                     {rop.cash.toLocaleString("ru-RU")} ₸
                   </p>
                   {rop.plan > 0 && (
@@ -829,16 +864,16 @@ const LeaderboardView = ({
       <div className="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-2xl">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h3 className="text-2xl font-bold mb-2 flex items-center gap-3">
+            <h3 className="text-xl md:text-2xl font-bold mb-2 flex items-center gap-3">
               <Clock className="w-8 h-8" />
               Почасовой прогресс
             </h3>
-            <p className="text-indigo-100">
+            <p className="text-sm md:text-base text-indigo-100">
               Цель: {hourlyProgress.target} пробных уроков в час
             </p>
           </div>
           <div className="text-right">
-            <p className="text-4xl font-black">
+            <p className="text-2xl md:text-4xl font-black">
               {hourlyProgress.current}/{hourlyProgress.target}
             </p>
             <p className="text-indigo-200 text-sm">
@@ -1876,7 +1911,7 @@ const AnalyticsView = ({ entries, ropList }) => {
       </div>
 
       <div>
-        <h3 className="font-bold text-2xl text-gray-900 mb-4">
+        <h3 className="font-bold text-xl md:text-2xl text-gray-900 mb-4">
           Воронка за период
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -1884,35 +1919,35 @@ const AnalyticsView = ({ entries, ropList }) => {
             title="Всего заявок"
             count={funnelStats.total}
             total={funnelStats.total}
-            icon={<BookCopy size={24} />}
+            icon={<BookCopy size={18} />}
             colorClass="bg-gray-500 border-gray-600"
           />
           <FunnelStatCard
             title="Проведено"
             count={funnelStats.conducted}
             total={funnelStats.total}
-            icon={<UserCheck size={24} />}
+            icon={<UserCheck size={20} />}
             colorClass="bg-blue-500 border-blue-600"
           />
           <FunnelStatCard
             title="Оплаты"
             count={funnelStats.paid}
             total={funnelStats.total}
-            icon={<CheckCircle size={24} />}
+            icon={<CheckCircle size={20} />}
             colorClass="bg-green-500 border-green-600"
           />
           <FunnelStatCard
             title="Отказы"
             count={funnelStats.refused}
             total={funnelStats.total}
-            icon={<XCircle size={24} />}
+            icon={<XCircle size={20} />}
             colorClass="bg-red-500 border-red-600"
           />
           <FunnelStatCard
             title="Переносы"
             count={funnelStats.rescheduled}
             total={funnelStats.total}
-            icon={<History size={24} />}
+            icon={<History size={20} />}
             colorClass="bg-orange-500 border-orange-600"
           />
         </div>
@@ -1922,7 +1957,7 @@ const AnalyticsView = ({ entries, ropList }) => {
         <StatCard
           title="Общая касса"
           value={`${totalCash.toLocaleString("ru-RU")} ₸`}
-          icon={<DollarSign className="w-10 h-10 text-white" />}
+          icon={<DollarSign className="w-6 h-6 md:w-8 md:h-8 text-white" />}
           gradient="bg-gradient-to-r from-green-500 to-green-600"
         />
         <StatCard
@@ -1930,7 +1965,7 @@ const AnalyticsView = ({ entries, ropList }) => {
           value={`${averageCheck.toLocaleString("ru-RU", {
             maximumFractionDigits: 0,
           })} ₸`}
-          icon={<PieChartIcon className="w-10 h-10 text-white" />}
+          icon={<PieChartIcon className="w-6 h-6 md:w-8 md:h-8 text-white" />}
           gradient="bg-gradient-to-r from-purple-500 to-purple-600"
         />
         <ReachabilityChart stats={reachabilityStats} />
@@ -1960,64 +1995,73 @@ const AnalyticsView = ({ entries, ropList }) => {
 const BreakdownList = ({ title, data }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
     <h3 className="font-bold text-xl text-gray-900 mb-6">{title}</h3>
-    <div
-      className="w-full"
-      style={{ height: `${Math.max(120, data.length * 45)}px` }}
-    >
-      {data.length > 0 ? (
-        <ResponsiveContainer>
-          <BarChart
-            layout="vertical"
-            data={data}
-            margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" hide />
-            <YAxis
-              yAxisId={0}
-              dataKey="name"
-              type="category"
-              axisLine={false}
-              tickLine={false}
-              width={100}
-              style={{ fontSize: "12px" }}
-            />
-            <YAxis
-              yAxisId={1}
-              orientation="right"
-              dataKey="amount"
-              type="category"
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(value) => `${value.toLocaleString("ru-RU")} ₸`}
-              style={{ fontSize: "12px", fill: "#6b7280" }}
-            />
-            <Tooltip
-              formatter={(value) => `${value.toLocaleString("ru-RU")} ₸`}
-            />
-            <Bar
-              yAxisId={0}
-              dataKey="amount"
-              name="Касса"
-              fill="#3b82f6"
-              radius={[0, 4, 4, 0]}
-              maxBarSize={25}
+    <div className="w-full overflow-x-auto">
+      <div
+        className="w-full"
+        style={{
+          height: `${Math.max(120, data.length * 45)}px`,
+          minWidth: "600px",
+        }}
+      >
+        {data.length > 0 ? (
+          <ResponsiveContainer>
+            <BarChart
+              layout="vertical"
+              data={data}
+              margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
             >
-              <LabelList
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" hide />
+              <YAxis
+                yAxisId={0}
                 dataKey="name"
-                position="insideLeft"
-                style={{ fill: "white", fontSize: "12px", fontWeight: "bold" }}
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                width={100}
+                style={{ fontSize: "12px" }}
               />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500 text-center py-8">
-            Нет данных для отображения.
-          </p>
-        </div>
-      )}
+              <YAxis
+                yAxisId={1}
+                orientation="right"
+                dataKey="amount"
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value) => `${value.toLocaleString("ru-RU")} ₸`}
+                style={{ fontSize: "12px", fill: "#6b7280" }}
+              />
+              <Tooltip
+                formatter={(value) => `${value.toLocaleString("ru-RU")} ₸`}
+              />
+              <Bar
+                yAxisId={0}
+                dataKey="amount"
+                name="Касса"
+                fill="#3b82f6"
+                radius={[0, 4, 4, 0]}
+                maxBarSize={25}
+              >
+                <LabelList
+                  dataKey="name"
+                  position="insideLeft"
+                  style={{
+                    fill: "white",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500 text-center py-8">
+              Нет данных для отображения.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -2025,64 +2069,73 @@ const BreakdownList = ({ title, data }) => (
 const TrialSourceChart = ({ title, data }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
     <h3 className="font-bold text-xl text-gray-900 mb-6">{title}</h3>
-    <div
-      className="w-full"
-      style={{ height: `${Math.max(120, data.length * 45)}px` }}
-    >
-      {data.length > 0 ? (
-        <ResponsiveContainer>
-          <BarChart
-            layout="vertical"
-            data={data}
-            margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
-          >
-            <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-            <XAxis type="number" hide />
-            <YAxis
-              yAxisId={0}
-              dataKey="name"
-              type="category"
-              axisLine={false}
-              tickLine={false}
-              width={120}
-              style={{ fontSize: "12px" }}
-            />
-            <YAxis
-              yAxisId={1}
-              orientation="right"
-              dataKey="count"
-              type="category"
-              axisLine={false}
-              tickLine={false}
-              tickFormatter={(value) => `${value}`}
-              style={{ fontSize: "12px", fill: "#6b7280" }}
-            />
-            <Tooltip
-              formatter={(value, name) => [`${value} пробных`, "Количество"]}
-            />
-            <Bar
-              yAxisId={0}
-              dataKey="count"
-              name="Пробные"
-              fill="#8884d8"
-              radius={[0, 4, 4, 0]}
-              maxBarSize={25}
+    <div className="w-full overflow-x-auto">
+      <div
+        className="w-full"
+        style={{
+          height: `${Math.max(120, data.length * 45)}px`,
+          minWidth: "600px",
+        }}
+      >
+        {data.length > 0 ? (
+          <ResponsiveContainer>
+            <BarChart
+              layout="vertical"
+              data={data}
+              margin={{ top: 5, right: 50, left: 20, bottom: 5 }}
             >
-              <LabelList
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+              <XAxis type="number" hide />
+              <YAxis
+                yAxisId={0}
                 dataKey="name"
-                position="insideLeft"
-                style={{ fill: "white", fontSize: "12px", fontWeight: "bold" }}
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                width={120}
+                style={{ fontSize: "12px" }}
               />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      ) : (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-gray-500 text-center py-8">
-            Нет данных для отображения.
-          </p>
-        </div>
-      )}
+              <YAxis
+                yAxisId={1}
+                orientation="right"
+                dataKey="count"
+                type="category"
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(value) => `${value}`}
+                style={{ fontSize: "12px", fill: "#6b7280" }}
+              />
+              <Tooltip
+                formatter={(value, name) => [`${value} пробных`, "Количество"]}
+              />
+              <Bar
+                yAxisId={0}
+                dataKey="count"
+                name="Пробные"
+                fill="#8884d8"
+                radius={[0, 4, 4, 0]}
+                maxBarSize={25}
+              >
+                <LabelList
+                  dataKey="name"
+                  position="insideLeft"
+                  style={{
+                    fill: "white",
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                  }}
+                />
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <p className="text-gray-500 text-center py-8">
+              Нет данных для отображения.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   </div>
 );
@@ -2095,6 +2148,7 @@ const CombinedCashTrialsChart = ({ data }) => {
   }));
 
   const formatCashTick = (tick) => {
+    if (tick >= 1000000) return `${(tick / 1000000).toFixed(1)}m`;
     if (tick >= 1000) return `${(tick / 1000).toFixed(0)}k`;
     return tick;
   };
@@ -2107,60 +2161,72 @@ const CombinedCashTrialsChart = ({ data }) => {
       <p className="text-gray-500 text-sm mb-4">
         Динамика пробных уроков и кассы за выбранный период
       </p>
-      <ResponsiveContainer width="100%" height={450}>
-        <ComposedChart
-          data={chartData}
-          margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
-        >
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis dataKey="name" angle={-30} textAnchor="end" height={50} />
-          <YAxis
-            yAxisId="left"
-            stroke="#f97316"
-            label={{
-              value: "Пробные",
-              angle: -90,
-              position: "insideLeft",
-              fill: "#f97316",
-            }}
-          />
-          <YAxis
-            yAxisId="right"
-            orientation="right"
-            stroke="#4ade80"
-            tickFormatter={formatCashTick}
-            label={{
-              value: "Касса (₸)",
-              angle: -90,
-              position: "insideRight",
-              fill: "#4ade80",
-            }}
-          />
-          <Tooltip
-            formatter={(value, name) =>
-              name === "Касса" ? `${value.toLocaleString("ru-RU")} ₸` : value
-            }
-          />
-          <Legend />
-          <Bar
-            yAxisId="right"
-            dataKey="cash"
-            name="Касса"
-            fill="#4ade80"
-            radius={[4, 4, 0, 0]}
-          />
-          <Line
-            yAxisId="left"
-            type="monotone"
-            dataKey="trials"
-            name="Пробные"
-            stroke="#f97316"
-            strokeWidth={3}
-            dot={{ r: 4 }}
-            activeDot={{ r: 6 }}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+      <div className="w-full overflow-x-auto">
+        <div style={{ minWidth: 700, height: 450 }}>
+          <ResponsiveContainer width="100%" height="100%">
+            <ComposedChart
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="name"
+                angle={-30}
+                textAnchor="end"
+                height={50}
+                interval="preserveStartEnd"
+              />
+              <YAxis
+                yAxisId="left"
+                stroke="#f97316"
+                label={{
+                  value: "Пробные",
+                  angle: -90,
+                  position: "insideLeft",
+                  fill: "#f97316",
+                }}
+              />
+              <YAxis
+                yAxisId="right"
+                orientation="right"
+                stroke="#4ade80"
+                tickFormatter={formatCashTick}
+                label={{
+                  value: "Касса (₸)",
+                  angle: -90,
+                  position: "insideRight",
+                  fill: "#4ade80",
+                }}
+              />
+              <Tooltip
+                formatter={(value, name) =>
+                  name === "Касса"
+                    ? `${value.toLocaleString("ru-RU")} ₸`
+                    : value
+                }
+              />
+              <Legend />
+              <Bar
+                yAxisId="right"
+                dataKey="cash"
+                name="Касса"
+                fill="#4ade80"
+                radius={[4, 4, 0, 0]}
+              />
+              <Line
+                yAxisId="left"
+                type="monotone"
+                dataKey="trials"
+                name="Пробные"
+                stroke="#f97316"
+                strokeWidth={3}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </ComposedChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
     </div>
   );
 };
