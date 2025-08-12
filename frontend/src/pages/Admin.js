@@ -11,6 +11,7 @@ import {
   Filter,
   History,
   Lock,
+  Menu,
   PieChartIcon,
   Plus,
   Search,
@@ -22,7 +23,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { TeacherNotificationSender } from "../components/TeacherSendNotification/TeacherNotificationSender";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { UserModal } from "./User";
 import { formatPhoneNumber } from "../components/FormatPhoneNumber/FormatPhoneNumber";
 import { PlanModal } from "./Plan";
@@ -201,41 +202,23 @@ const TrialsListView = ({
   const [visibleCount, setVisibleCount] = useState(50);
 
   const filteredEntries = useMemo(() => {
-    return entries
-      .filter((entry) => {
-        const startDate = filters.startDate
-          ? new Date(filters.startDate)
-          : null;
-        if (startDate) startDate.setUTCHours(0, 0, 0, 0);
+    const start = filters.startDate ? new Date(filters.startDate) : null;
+    const end = filters.endDate ? new Date(filters.endDate) : null;
 
-        const endDate = filters.endDate ? new Date(filters.endDate) : null;
-        if (endDate) endDate.setUTCHours(23, 59, 59, 999);
+    if (start) start.setHours(0, 0, 0, 0);
+    if (end) end.setHours(23, 59, 59, 999);
 
-        const entryTrialDate = entry.trialDate
-          ? new Date(entry.trialDate)
-          : null;
-
-        let dateMatch = true;
-        if (startDate && endDate) {
-          dateMatch =
-            entryTrialDate &&
-            entryTrialDate >= startDate &&
-            entryTrialDate <= endDate;
-        } else if (startDate) {
-          dateMatch = entryTrialDate && entryTrialDate >= startDate;
-        } else if (endDate) {
-          dateMatch = entryTrialDate && entryTrialDate <= endDate;
-        }
-
-        return (
-          dateMatch &&
-          (!filters.rop || entry.rop === filters.rop) &&
-          (!filters.source || entry.source === filters.source) &&
-          (!filters.status || (entry.status || "Ожидает") === filters.status) &&
-          (!filters.paymentType || entry.paymentType === filters.paymentType)
-        );
-      })
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return entries.filter((entry) => {
+      // Prioritize the actual trial date for filtering, but fall back to creation date
+      const entryDate = entry.trialDate
+        ? new Date(entry.trialDate)
+        : new Date(entry.createdAt);
+      const dateMatch =
+        (!start || entryDate >= start) && (!end || entryDate <= end);
+      const sourceMatch = !filters.source || entry.source === filters.source;
+      const ropMatch = !filters.rop || entry.rop === filters.rop;
+      return dateMatch && sourceMatch && ropMatch;
+    });
   }, [entries, filters]);
 
   // NEW: A separate memo to slice the visible entries
@@ -1169,8 +1152,6 @@ const DistributionView = ({
       return;
     }
 
-    console.log(teacher, time, draggedItem);
-
     onUpdateEntry(draggedItem.id, {
       ...draggedItem,
       assignedTeacher: teacher.name,
@@ -1187,7 +1168,6 @@ const DistributionView = ({
   };
 
   const handleDragEnter = (e, teacher, time) => {
-    console.log(teacher);
     if (!readOnly && !isMobile) setDragOverCell(`${teacher.name}-${time}`);
   };
 
@@ -1196,10 +1176,7 @@ const DistributionView = ({
   };
 
   const handleEntryClick = (entry) => {
-    if (readOnly) {
-      onOpenDetails(entry, true);
-      return;
-    }
+    if (readOnly) return;
     if (isMobile) {
       if (selectedEntryForMobile?.id === entry.id) {
         setSelectedEntryForMobile(null); // Deselect
@@ -1207,7 +1184,6 @@ const DistributionView = ({
         setSelectedEntryForMobile(entry); // Select
       }
     } else {
-      onOpenDetails(entry, readOnly);
     }
   };
 
@@ -1314,7 +1290,6 @@ const DistributionView = ({
     blockedSlots.forEach((slot) => map.set(slot.id, true));
     return map;
   }, [blockedSlots]);
-  console.log(teacherSchedule.teacherObjList);
 
   return (
     <div className="space-y-6">
@@ -1508,7 +1483,7 @@ const DistributionView = ({
                 <Calendar className="w-6 h-6 text-blue-600" />
                 График преподавателей
                 {selectedDate && (
-                  <span className="text-sm text-blue-600 bg-blue-100 px-3 py-1 rounded-full font-semibold">
+                  <span className="text-sm text-blue-600 bg-blue-100 text-center md:px-3 py-1 rounded-full font-semibold">
                     {new Date(selectedDate + "T00:00:00").toLocaleDateString(
                       "ru-RU",
                       {
@@ -1522,7 +1497,7 @@ const DistributionView = ({
               </h3>
             </div>
             <div className="p-3 md:p-6">
-              <div className="overflow-auto max-h-[70vh]">
+              <div className="overflow-x-auto max-h-[70vh]">
                 <table className="w-full border-collapse relative">
                   <thead>
                     <tr>
@@ -2290,6 +2265,30 @@ export const AdminPage = ({
   onSavePlans,
   ...props
 }) => {
+  // NEW: State and ref for the mobile menu
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // NEW: A simple hook to detect if the view is mobile
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // NEW: Effect to close the menu when clicking outside of it
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuRef]);
+
   const renderAdminView = () => {
     switch (activeTab) {
       case "trials-list":
@@ -2333,6 +2332,15 @@ export const AdminPage = ({
     }
   };
 
+  // NEW: Filter tabs based on user role and readOnly status
+  const filteredTabs = useMemo(
+    () =>
+      tabs.filter(
+        (tab) => !readOnly && (currentUser.role === "admin" || !tab.adminOnly)
+      ),
+    [tabs, readOnly, currentUser.role]
+  );
+
   return (
     <section className="space-y-8">
       <div className="flex flex-wrap justify-between items-center gap-6 bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
@@ -2345,7 +2353,7 @@ export const AdminPage = ({
             Назад
           </button>
         )}
-        <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl flex-wrap">
+        {/* <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl flex-wrap">
           {tabs
             .filter(
               (tab) =>
@@ -2355,16 +2363,72 @@ export const AdminPage = ({
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                className={`w-full py-2 md:w-fit md:px-6 md:py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
                   activeTab === tab.id
                     ? "bg-white text-blue-600 shadow-lg transform scale-105"
-                    : "text-gray-600 hover:bg-gray-50"
+                    : "text-gray-600 hover:bg-gray-50 bg-gray-200"
                 }`}
               >
                 {tab.label}
               </button>
             ))}
-        </div>
+        </div> */}
+        {isMobile ? (
+          // --- MOBILE VIEW ---
+          <div className="relative w-full" ref={menuRef}>
+            <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl">
+              {/* Always show the active tab */}
+              <button className="flex-1 px-4 py-3 rounded-xl text-sm font-bold bg-white text-blue-600 shadow-lg">
+                {filteredTabs.find((t) => t.id === activeTab)?.label}
+              </button>
+              {/* Burger Menu Button */}
+              <button
+                onClick={() => setIsMenuOpen((prev) => !prev)}
+                className="p-3  rounded-xl text-sm font-bold bg-gray-200 text-gray-600 hover:bg-gray-300"
+              >
+                <Menu size={20} />
+              </button>
+            </div>
+
+            {/* Dropdown Menu */}
+            {isMenuOpen && (
+              <div className="absolute top-full right-0 mt-2 w-560 bg-white rounded-2xl shadow-xl border z-20 p-2">
+                {filteredTabs
+                  .filter((tab) => tab.id !== activeTab) // Show only other tabs
+                  .map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setIsMenuOpen(false); // Close menu on selection
+                      }}
+                      className="w-full text-left px-4 py-3 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100"
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          // --- DESKTOP VIEW (Your original logic) ---
+          <div className="flex gap-2 bg-gray-100 p-2 rounded-2xl flex-wrap">
+            {filteredTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-sm ${
+                  activeTab === tab.id
+                    ? "bg-white text-blue-600 shadow-lg transform scale-105"
+                    : "text-gray-600 hover:bg-gray-50 bg-gray-200"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         <div className="text-sm text-gray-600 font-bold bg-gray-100 px-4 py-2 rounded-xl">
           {new Date().toLocaleDateString("ru-RU", {
             weekday: "long",
