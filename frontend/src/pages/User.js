@@ -94,13 +94,13 @@ export const UserModal = ({ user, onClose, onSave }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold"
+              className="px-4 md:px-6 py-2 bg-gray-100 text-gray-700 rounded-lg font-semibold"
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold"
+              className="px-4 md:px-6 py-2 bg-blue-600 text-white rounded-lg font-semibold"
             >
               Сохранить
             </button>
