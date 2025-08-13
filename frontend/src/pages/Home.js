@@ -126,7 +126,7 @@ const initialUsers = [
     password: "password123",
     role: "teacher",
     name: "Асем",
-    number: "",
+    number: " ",
   },
   {
     id: "11",
