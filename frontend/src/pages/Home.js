@@ -640,7 +640,7 @@ const FormPage = ({
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`w-full font-bold py-5 px-8 rounded-2xl transition-all shadow-xl transform ${
+                className={`w-full font-bold px-5 py-3 md:py-5 md:px-8 rounded-2xl transition-all shadow-xl transform ${
                   isSubmitting
                     ? "bg-gray-400 cursor-not-allowed"
                     : "bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 hover:shadow-2xl hover:-translate-y-0.5"
@@ -1460,7 +1460,7 @@ export default function App() {
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-bold rounded-xl shadow-lg hover:from-red-600 hover:to-red-700 transition-all"
+            className="flex items-center gap-3 px-4 py-2 md:px-6 md:py-3 bg-gradient-to-r from-red-500 to-red-600 text-white font-semibold md:font-bold rounded-xl shadow-lg hover:from-red-600 hover:to-red-700 transition-all"
           >
             Выйти
           </button>
