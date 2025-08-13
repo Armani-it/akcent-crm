@@ -98,13 +98,13 @@ const UserManagementView = ({ users, onSaveUser, onDeleteUser }) => {
 
   return (
     <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
-      <div className="flex justify-between items-center mb-6">
+      <div className="grid gap-4 md:gap-0 md:flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900">
           Управление пользователями
         </h2>
         <button
           onClick={handleAddNew}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all"
+          className="flex items-center gap-2 px-2 py-1 md:px-4 md:py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-xl shadow-lg hover:from-blue-600 hover:to-blue-700 transition-all"
         >
           <Plus size={18} />
           Добавить пользователя
